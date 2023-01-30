@@ -1,0 +1,29 @@
+func counter_ctor(val = 2022) {
+    return object {
+        var count = val;
+        func add(n = 1) {
+            this.count = this.count + n;
+        }
+        func get() {
+            return this.count;
+        }
+        func set(n = 0) {
+            this.count = n;
+        }
+    };
+}
+func counter_pro_ctor(val = 2023) {
+    var super = counter_ctor(val);
+    var super_add_old = super.add;
+    super.add = () => {
+        super_add_old(@ this, math_round(random_range(1, 200)));
+    };
+    return super;
+}
+
+var my_counter = counter_ctor();
+var my_counter_pro = counter_pro_ctor();
+my_counter.add();
+my_counter_pro.add();
+console_printf('now: ' + my_counter.get());
+console_printf('after many years: ' + my_counter_pro.get());

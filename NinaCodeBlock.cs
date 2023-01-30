@@ -1,0 +1,94 @@
+namespace Nina;
+
+struct NinaCodeBlock {
+    public NinaCodeBlockType type;
+    public string file, code;
+    public int line, col;
+    public double? val_num;
+    public bool? val_num_dotted;
+    public string? val_str;
+    public NinaSymbolType? val_sy;
+    public NinaKeywordType? val_kw;
+    public NinaOperatorType? val_op;
+    public int? val_op_lv;
+    public bool? val_op_unary;
+    public NinaCodeBlock(string _file, int _line, int _col, string _code,
+            NinaCodeBlockType _assert, NinaSymbolType? _assert_sy = null,
+            NinaOperatorType? _assert_op = null, int? _assert_op_lv = null,
+            NinaKeywordType? _assert_kw = null, double? _assert_num = null,
+            string? _assert_str = null) {
+        type = _assert;
+        file = _file;
+        line = _line;
+        col = _col;
+
+        if (_assert == NinaCodeBlockType.String || _assert == NinaCodeBlockType.Identifier) {
+            code = _code;
+            val_num = null;
+            val_num_dotted = null;
+            val_str = _assert_str;
+            val_sy = null;
+            val_kw = null;
+            val_op = null;
+            val_op_lv = null;
+            val_op_unary = null;
+        }
+        else if (_assert == NinaCodeBlockType.Symbol) {
+            code = _code;
+            val_num = null;
+            val_num_dotted = null;
+            val_str = null;
+            val_sy = _assert_sy;
+            val_kw = null;
+            val_op = null;
+            val_op_lv = null;
+            val_op_unary = null;
+        }
+        else if (_assert == NinaCodeBlockType.Operator) {
+            code = _code;
+            val_num = null;
+            val_num_dotted = null;
+            val_str = null;
+            val_sy = null;
+            val_kw = null;
+            val_op = _assert_op;
+            val_op_lv = _assert_op_lv;
+            val_op_unary
+                = NinaCodeBlockUtil.operators_unarys.Contains((int) val_op !);
+        }
+        else if (_assert == NinaCodeBlockType.Keyword) {
+            code = _code;
+            val_num = null;
+            val_num_dotted = null;
+            val_str = null;
+            val_sy = null;
+            val_kw = _assert_kw;
+            val_op = null;
+            val_op_lv = null;
+            val_op_unary = null;
+        }
+        else if (_assert == NinaCodeBlockType.Number) {
+            code = _code;
+            val_num = _assert_num;
+            val_num_dotted = ((int?) val_num)!.Value != val_num!.Value;
+            val_str = null;
+            val_sy = null;
+            val_kw = null;
+            val_op = null;
+            val_op_lv = null;
+            val_op_unary = null;
+        }
+        else {
+            code = _code;
+            val_num = null;
+            val_num_dotted = null;
+            val_str = null;
+            val_sy = null;
+            val_kw = null;
+            val_op = null;
+            val_op_lv = null;
+            val_op_unary = null;
+            NinaError.error("unexpected error.", 697790);
+        }
+    }
+}
