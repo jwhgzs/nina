@@ -31,6 +31,7 @@ console_printf('time: ' + (time_now() - t1) * 1000 + ' ms');
 从中还可以看出，Nina的两个基本属性：
 - 动态类型语言
 - 弱类型语言
+
 这一点也与JavaScript完全一致！看来这对姐妹花是亲生的没错了。
 
 # 进一步了解Nina
