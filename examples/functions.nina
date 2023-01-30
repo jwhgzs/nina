@@ -1,0 +1,25 @@
+// 这里讲解Nina中函数的定义与特性
+
+// 使用函数定义语法糖简单地定义一个全局函数
+// 参数列表可以设置参数的默认值
+func f(a, b, c = 1) {
+    return a + b * c;
+}
+
+// 处在对象或数组中的函数，有一个内置的特殊变量 this
+// 用 this 可以访问当前函数所在的对象哦！
+var obj = object {
+    var a = 0;
+    func f() {
+        this.a = this.a + 1;
+        console_printf(this.a);
+    }
+};
+// 请注意，特殊变量 this 的指向是动态变化的，例如如果这样（接上面的代码）：
+var obj2 = object {
+    var a = 2022;
+    var f = obj.f;
+};
+// 这里将会输出 2023 ~
+obj2.f();
+// 另外，如你所见，Nina中的函数都是闭包——都可以自由地访问变量！

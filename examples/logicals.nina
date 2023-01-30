@@ -1,0 +1,22 @@
+// 这里介绍了Nina中基本的流程控制语句
+
+// if - else - elseif 语句，显而易见，不加解释~
+var n = 2023;
+if (n == 2020) {
+    console_printf('很奇怪的一年……');
+}
+elseif (n == 2021) {
+    console_printf('还好的一年！');
+}
+elseif (n == 2022) {
+    console_printf('糟糕的一年！！');
+}
+else {
+    console_printf('真不错~~');
+}
+
+// Nina中只有 while 一种循环语句
+var i = 0;
+while (i < 10) {
+    i = i + 1;
+}

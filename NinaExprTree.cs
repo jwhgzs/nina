@@ -330,10 +330,10 @@ class NinaExprTree {
             else {
                 CSharpSyntaxNode node = r!.compile(false);
                 ExpressionSyntax? expr = node as ExpressionSyntax;
+                ArgumentListSyntax? list = node as ArgumentListSyntax;
                 BlockSyntax? compiledBlock = node as BlockSyntax;
                 
-                if (block.val_op == NinaOperatorType.Object
-                        || block.val_op == NinaOperatorType.Array) {
+                if (block.val_op == NinaOperatorType.Object) {
                     if (compiledBlock == null) {
                         NinaError.error(
                             "invalid right-hand expression " +
@@ -342,15 +342,31 @@ class NinaExprTree {
                             new NinaErrorPosition(block.file, block.line, block.col));
                     }
                     return ObjectCreationExpression(
-                        type: block.val_op == NinaOperatorType.Object
-                            ? IdentifierName("object")
-                            : IdentifierName("array"),
+                        type: IdentifierName("object"),
                         argumentList: ArgumentList(),
                         initializer:
                             NinaCompilerUtil.transfer_block2init(compiledBlock !, block)
                     );
                 }
-                else if (expr == null || compiledBlock != null) {
+                else if (block.val_op == NinaOperatorType.Array) {
+                    if (list != null) {
+                        return ObjectCreationExpression(
+                            type: IdentifierName("array"),
+                            argumentList: ArgumentList(),
+                            initializer:
+                                NinaCompilerUtil.transfer_list2init(list, block)
+                        );
+                    }
+                    else {
+                        return ObjectCreationExpression(
+                            type: IdentifierName("array"),
+                            argumentList: ArgumentList(),
+                            initializer:
+                                NinaCompilerUtil.transfer_list2init(expr !, block)
+                        );
+                    }
+                }
+                else if (expr == null) {
                     NinaError.error(
                         "invalid right-hand expression " +
                         "for unary operator.",

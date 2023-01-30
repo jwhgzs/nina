@@ -310,6 +310,48 @@ static class NinaCompilerUtil {
             _block
         );
     }
+    public static InitializerExpressionSyntax transfer_list2init(
+            ArgumentListSyntax _list, NinaCodeBlock _block) {
+        SeparatedSyntaxList<ArgumentSyntax> list = _list.Arguments;
+        SeparatedSyntaxList<ExpressionSyntax> ret
+            = new SeparatedSyntaxList<ExpressionSyntax>();
+        int currI = - 1;
+        for (int i = 0; i < list.Count; ++ i) {
+            ExpressionSyntax v = list[i].Expression;
+            LiteralExpressionSyntax key
+                = LiteralExpression(
+                    kind: SyntaxKind.NumericLiteralExpression,
+                    token: Literal((double) (++ currI))
+                );
+            ExpressionSyntax val = v;
+            ret = ret.Add(
+                AssignmentExpression(
+                    kind: SyntaxKind.SimpleAssignmentExpression,
+                    left: ImplicitElementAccess(
+                        BracketedArgumentList(
+                            new SeparatedSyntaxList<ArgumentSyntax>()
+                                .Add(Argument(key))
+                        )
+                    ),
+                    right: val
+                )
+            );
+        }
+        return InitializerExpression(
+            kind: SyntaxKind.ObjectInitializerExpression,
+            expressions: ret
+        );
+    }
+    public static InitializerExpressionSyntax transfer_list2init(
+            ExpressionSyntax _expr, NinaCodeBlock _block) {
+        return transfer_list2init(
+            ArgumentList(
+                new SeparatedSyntaxList<ArgumentSyntax>()
+                    .Add(Argument(_expr))
+            ),
+            _block
+        );
+    }
     public static InitializerExpressionSyntax transfer_block2init(
             BlockSyntax _block, NinaCodeBlock _eblock) {
         SeparatedSyntaxList<ExpressionSyntax> list

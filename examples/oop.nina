@@ -1,0 +1,20 @@
+// 这里将讲解Nina中OOP（面向对象）的实现方式
+
+// Nina中没有直接的OOP实现，可以利用函数和对象来实现哦~
+func new_counter(val = 2022) {
+    return obejct {
+        var n = val;
+        func add(i = 1) {
+            this.n = this.n + i;
+        }
+    };
+}
+var counter1 = new_counter();
+var counter2 = new_counter(2024);
+counter1.add();
+counter2.add(- 1);
+// 这里将会输出两个 2023 ！
+console_printf(counter1.n);
+console_printf(counter2.n);
+
+// 另外OOP的重要特性——继承也是可以用这种方式实现的，自己试试吧~

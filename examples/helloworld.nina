@@ -1,0 +1,9 @@
+// 这是个很简单的 helloworld 例子
+
+// 这里的 console_printf 是Nina的内置函数，用以输出数据并换行
+console_printf('hello, world');
+
+// console_print 和 console_printf 相似，不过她输出数据后并不会换行
+// 比如下面这个例子中 hello, 和 world 将在同一行：
+console_print('hello, ');
+console_print('world');
