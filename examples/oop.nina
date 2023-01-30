@@ -5,7 +5,7 @@ func new_counter(val = 2022) {
     return object {
         var n = val;
         func add(n) {
-            this.n = this.n + i;
+            this.n = this.n + n;
         }
     };
 }
