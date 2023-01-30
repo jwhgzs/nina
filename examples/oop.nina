@@ -28,5 +28,5 @@ func new_counter_pro(val = 2023) {
 }
 var counter_pro = new_counter_pro();
 counter_pro.add();
-// 将会输出许多年后的年份哦~
+// 将会输出未来的年份哦~
 console_printf(counter_pro.n);
