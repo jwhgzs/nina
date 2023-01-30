@@ -2,7 +2,7 @@
 
 // Nina中没有直接的OOP实现，可以利用函数和对象来实现哦~
 func new_counter(val = 2022) {
-    return obejct {
+    return object {
         var n = val;
         func add(i = 1) {
             this.n = this.n + i;
