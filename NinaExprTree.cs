@@ -279,7 +279,7 @@ class NinaExprTree {
                                 _type: NinaOperatorType.MBraL,
                                 _expr_l: expr_l,
                                 _expr_r: new NinaASTLiteralExpression(
-                                    id.name
+                                    NinaCompilerUtil.unformat_identifier(id.name)
                                 )
                             );
                     }

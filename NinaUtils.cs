@@ -270,7 +270,17 @@ static class NinaCompilerUtil {
         List<ANinaASTStatement> stms = _block.stms;
         for (int i = 0; i < stms.Count; ++ i) {
             ANinaASTStatement v = stms[i];
-            if (v is NinaASTVarStatement vars) {}
+            if (v is NinaASTVarStatement vars) {
+                List<(string, ANinaASTExpression?)> w = vars.vars.list;
+                for (int j = 0; j < w.Count; ++ j) {
+                    w[j] = (
+                        NinaCompilerUtil.unformat_identifier(
+                            w[j].Item1
+                        ),
+                        w[j].Item2
+                    );
+                }
+            }
             else if (v is NinaASTWordStatement tmp
                     && tmp.type == NinaKeywordType.Return
                     && i == stms.Count - 1) {

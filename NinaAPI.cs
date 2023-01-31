@@ -1,3 +1,8 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
+
 namespace Nina;
 
 public class NinaDataArray: List<object> {
@@ -25,6 +30,10 @@ public static class NinaAPIUtil {
             return d != 0;
         else if (_o is string s)
             return s.Length > 0;
+        else if (_o is int i)
+            return i != 0;
+        else if (_o is long l)
+            return l != 0;
         else
             NinaError.error("invalid convert to numeric.", 123901);
         return false;
@@ -38,6 +47,10 @@ public static class NinaAPIUtil {
             return b ? 1 : 0;
         else if (_o is string s && double.TryParse(s, out double sd))
             return sd;
+        else if (_o is int i)
+            return i;
+        else if (_o is long l)
+            return l;
         else
             NinaError.error("invalid conversion to numeric.", 412910);
         return 0;
@@ -45,7 +58,8 @@ public static class NinaAPIUtil {
     public static string toTypeDesc(object _o) {
         if (_o == null)
             return "[Null]";
-        else if (_o is double || _o is bool)
+        else if (_o is double || _o is bool
+                || _o is int || _o is long)
             return "[Number]";
         else if (_o is string)
             return "[String]";
@@ -67,6 +81,10 @@ public static class NinaAPIUtil {
             return d.ToString();
         else if (_o is bool b)
             return b ? "1" : "0";
+        else if (_o is int i)
+            return i.ToString();
+        else if (_o is long l)
+            return l.ToString();
         else
             return toTypeDesc(_o);
     }
@@ -348,6 +366,226 @@ public static class NinaAPI {
     public static object string_lower(object _str) {
         string str = NinaAPIUtil.toString(_str);
         return str.ToLower();
+    }
+    public static object string_length(object _str) {
+        string str = NinaAPIUtil.toString(_str);
+        return (double) str.Length;
+    }
+    public static object array_length(object _arr) {
+        NinaDataArray? arr = _arr as NinaDataArray;
+        if (arr == null) {
+            NinaError.error("invalid array to operate.", 796923);
+        }
+        return (double) arr!.Count;
+    }
+    public static object array_append(object _arr, object _item) {
+        NinaDataArray? arr = _arr as NinaDataArray;
+        if (arr == null) {
+            NinaError.error("invalid array to operate.", 120312);
+        }
+        arr!.Add(_item);
+        return true;
+    }
+    public static object array_insert(object _arr, object _n, object _item) {
+        NinaDataArray? arr = _arr as NinaDataArray;
+        int n = (int) NinaAPIUtil.toNumber(_n);
+        if (arr == null) {
+            NinaError.error("invalid array to operate.", 102914);
+        }
+        try {
+            arr!.Insert(n, _item);
+            return true;
+        }
+        catch {
+            return false;
+        }
+    }
+    public static object array_pop(object _arr) {
+        NinaDataArray? arr = _arr as NinaDataArray;
+        if (arr == null) {
+            NinaError.error("invalid array to operate.", 593192);
+        }
+        try {
+            arr!.RemoveAt(arr.Count - 1);
+            return true;
+        }
+        catch {
+            return false;
+        }
+    }
+    public static object array_remove(object _arr, object _n) {
+        NinaDataArray? arr = _arr as NinaDataArray;
+        int n = (int) NinaAPIUtil.toNumber(_n);
+        if (arr == null) {
+            NinaError.error("invalid array to operate.", 605912);
+        }
+        try {
+            arr!.RemoveAt(n);
+            return true;
+        }
+        catch {
+            return false;
+        }
+    }
+    public static object array_clear(object _arr) {
+        NinaDataArray? arr = _arr as NinaDataArray;
+        if (arr == null) {
+            NinaError.error("invalid array to operate.", 491021);
+        }
+        arr!.Clear();
+        return true;
+    }
+    public static object array_find(object _arr, object _item) {
+        NinaDataArray? arr = _arr as NinaDataArray;
+        if (arr == null) {
+            NinaError.error("invalid array to operate.", 701901);
+        }
+        for (int i = 0; i < arr!.Count; ++ i) {
+            if (NinaAPIUtil.opLEqu_bool(arr![i], _item)) {
+                return (double) i;
+            }
+        }
+        return - 1d;
+    }
+    public static object array_find_last(object _arr, object _item) {
+        NinaDataArray? arr = _arr as NinaDataArray;
+        if (arr == null) {
+            NinaError.error("invalid array to operate.", 249931);
+        }
+        for (int i = arr!.Count - 1; i >= 0; -- i) {
+            if (NinaAPIUtil.opLEqu_bool(arr![i], _item)) {
+                return (double) i;
+            }
+        }
+        return - 1d;
+    }
+    private static JsonSerializerOptions json_option
+            = new JsonSerializerOptions() {
+                ReferenceHandler = ReferenceHandler.IgnoreCycles,
+                WriteIndented = true,
+                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+                Converters = {
+                    new NinaJSONObjectConverter()
+                }
+            };
+    public static object array_to_json(object _arr) {
+        NinaDataArray? arr = _arr as NinaDataArray;
+        if (arr == null) {
+            NinaError.error("invalid array to operate.", 120491);
+        }
+        try {
+            return
+                JsonSerializer.Serialize(
+                    arr, json_option
+                );
+        }
+        catch {
+            return null !;
+        }
+    }
+    public static object array_from_json(object _json) {
+        string json = NinaAPIUtil.toString(_json);
+        try {
+            return
+                new NinaDataArray(
+                    JsonSerializer.Deserialize<List<object>>(
+                        json,
+                        json_option
+                    ) !
+                );
+        }
+        catch {
+            return null !;
+        }
+    }
+    public static object object_length(object _obj) {
+        NinaDataObject? obj = _obj as NinaDataObject;
+        if (obj == null) {
+            NinaError.error("invalid object to operate.", 796923);
+        }
+        return (double) obj!.Count;
+    }
+    public static object object_has(object _obj, object _key) {
+        NinaDataObject? obj = _obj as NinaDataObject;
+        string key = NinaAPIUtil.toString(_key);
+        if (obj == null) {
+            NinaError.error("invalid object to operate.", 123091);
+        }
+        return obj!.ContainsKey(key);
+    }
+    public static object object_find(object _obj, object _item) {
+        NinaDataObject? obj = _obj as NinaDataObject;
+        string item = NinaAPIUtil.toString(_item);
+        if (obj == null) {
+            NinaError.error("invalid object to operate.", 190341);
+        }
+        for (int i = 0; i < obj!.Count; ++ i) {
+            var (k, v) = obj.ElementAt(i);
+            if (NinaAPIUtil.opLEqu_bool(v, item)) {
+                return k;
+            }
+        }
+        return null !;
+    }
+    public static object object_find_last(object _obj, object _item) {
+        NinaDataObject? obj = _obj as NinaDataObject;
+        string item = NinaAPIUtil.toString(_item);
+        if (obj == null) {
+            NinaError.error("invalid object to operate.", 765402);
+        }
+        for (int i = obj!.Count - 1; i >= 0; ++ i) {
+            var (k, v) = obj.ElementAt(i);
+            if (NinaAPIUtil.opLEqu_bool(v, item)) {
+                return k;
+            }
+        }
+        return null !;
+    }
+    public static object object_remove(object _obj, object _key) {
+        NinaDataObject? obj = _obj as NinaDataObject;
+        string key = NinaAPIUtil.toString(_key);
+        if (obj == null) {
+            NinaError.error("invalid object to operate.", 790422);
+        }
+        return obj!.Remove(key);
+    }
+    public static object object_clear(object _obj) {
+        NinaDataObject? obj = _obj as NinaDataObject;
+        if (obj == null) {
+            NinaError.error("invalid object to operate.", 234012);
+        }
+        obj!.Clear();
+        return true;
+    }
+    public static object object_to_json(object _obj) {
+        NinaDataObject? obj = _obj as NinaDataObject;
+        if (obj == null) {
+            NinaError.error("invalid object to operate.", 102941);
+        }
+        try {
+            return
+                JsonSerializer.Serialize(
+                    obj, json_option
+                );
+        }
+        catch {
+            return null !;
+        }
+    }
+    public static object object_from_json(object _json) {
+        string json = NinaAPIUtil.toString(_json);
+        try {
+            return
+                new NinaDataObject(
+                    JsonSerializer.Deserialize<Dictionary<string, object>>(
+                        json,
+                        json_option
+                    ) !
+                );
+        }
+        catch {
+            return null !;
+        }
     }
     public static object time_now() {
         TimeSpan ts
