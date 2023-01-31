@@ -195,20 +195,23 @@ static class NinaCompilerUtil {
             return _id.Remove(0, NinaConstsProviderUtil.CSHARP_ID_PREFIX.Length);
         return _id;
     }
-    public static NinaASTBlockExpression resolve_elses(
-            List<(ANinaASTExpression, NinaASTBlockExpression)> _list) {
+    public static NinaASTBlockExpression? resolve_elses(
+            List<(ANinaASTExpression, NinaASTBlockExpression)> _list,
+            NinaCodeBlock _posBlock) {
         NinaASTIfStatement? ret = null;
         for (int i = _list.Count - 1; i >= 0; -- i) {
             var (cond, block) = _list[i];
             NinaASTIfStatement nif = new NinaASTIfStatement(
                 _expr: cond,
-                _block: block
+                _block: block,
+                block.pos
             );
             if (ret != null) {
                 nif.block_else = new NinaASTBlockExpression(
                     new List<ANinaASTStatement>() {
                         ret
-                    }
+                    },
+                    block.pos
                 );
             }
             ret = nif;
@@ -217,9 +220,14 @@ static class NinaCompilerUtil {
             ? new NinaASTBlockExpression(
                 new List<ANinaASTStatement>() {
                     ret
-                }
+                },
+                ret.pos
             )
-            : new NinaASTBlockExpression();
+            : new NinaASTBlockExpression(
+                new NinaErrorPosition(
+                    _posBlock.file, _posBlock.line, _posBlock.col
+                )
+            );
     }
     public static NinaASTSuperListExpression transfer_list2params(
             NinaASTListExpression _list, NinaCodeBlock _posBlock) {
@@ -251,7 +259,9 @@ static class NinaCompilerUtil {
             }
         }
         return new NinaASTSuperListExpression(
-            ret
+            ret,
+            new NinaErrorPosition(_posBlock.file,
+                _posBlock.line, _posBlock.col)
         );
     }
     public static NinaASTSuperListExpression transfer_list2params(
@@ -260,7 +270,9 @@ static class NinaCompilerUtil {
             new NinaASTListExpression(
                 new List<ANinaASTExpression>() {
                     _expr
-                }
+                },
+                new NinaErrorPosition(_posBlock.file,
+                    _posBlock.line, _posBlock.col)
             ),
             _posBlock
         );

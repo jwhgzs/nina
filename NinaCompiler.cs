@@ -187,7 +187,9 @@ static class NinaCompiler {
     public static NinaASTBlockExpression compile(List<NinaCodeBlock> _blocks,
             ref int _i, NinaScopeType _scope = NinaScopeType.Root,
             NinaScopeType _cscope = NinaScopeType.Root) {
-        NinaASTBlockExpression block = new NinaASTBlockExpression();
+        NinaASTBlockExpression block = new NinaASTBlockExpression(
+            new NinaErrorPosition()
+        );
         if (_blocks.Count == 0)
             return block;
         if (_blocks.Last().val_sy != NinaSymbolType.Sem
@@ -211,10 +213,17 @@ static class NinaCompiler {
                 }
                 else {
                     if (_cscope == NinaScopeType.Function) {
+                        NinaErrorPosition tmpPos
+                            = new NinaErrorPosition(
+                                v.file, v.line, v.col
+                            );
                         block.stms.Add(
                             new NinaASTWordStatement(
                                 _type: NinaKeywordType.Return,
-                                _expr: new NinaASTLiteralExpression()
+                                _expr: new NinaASTLiteralExpression(
+                                    tmpPos
+                                ),
+                                _pos: tmpPos
                             )
                         );
                     }
@@ -227,7 +236,10 @@ static class NinaCompiler {
                     NinaASTVarStatement vars = new NinaASTVarStatement(
                         _isGlobal:
                             (_scope & NinaScopeType.Function) != NinaScopeType.Function,
-                        _isConst: v.val_kw == NinaKeywordType.Const
+                        _isConst: v.val_kw == NinaKeywordType.Const,
+                        _pos: new NinaErrorPosition(
+                            v.file, v.line, v.col
+                        )
                     );
                     bool isRoot
                         = (_scope & NinaScopeType.Function) != NinaScopeType.Function;
@@ -326,13 +338,19 @@ static class NinaCompiler {
                             new NinaErrorPosition(v.file, v.line, v.col));
                     }
                     else {
+                        NinaErrorPosition tmpPos
+                            = new NinaErrorPosition(
+                                v.file, v.line, v.col
+                            );
                         if (v.val_kw != NinaKeywordType.Else) {
                             expr = new NinaASTBinaryExpression(
                                 _type: NinaOperatorType.BraL,
                                 _expr_l: new NinaASTIdentifierExpression(
-                                    "NinaAPIUtil__toBool"
+                                    "NinaAPIUtil__toBool",
+                                    tmpPos
                                 ),
-                                _expr_r: expr !
+                                _expr_r: expr !,
+                                tmpPos
                             );
                         }
                         NinaScopeType nscope;
@@ -354,7 +372,8 @@ static class NinaCompiler {
                             block.stms.Add(
                                 new NinaASTIfStatement(
                                     _expr: expr !,
-                                    _block: body
+                                    _block: body,
+                                    tmpPos
                                 )
                             );
                             allow_elseif = true;
@@ -363,7 +382,8 @@ static class NinaCompiler {
                             block.stms.Add(
                                 new NinaASTWhileStatement(
                                     _expr: expr !,
-                                    _block: body
+                                    _block: body,
+                                    tmpPos
                                 )
                             );
                         }
@@ -388,11 +408,18 @@ static class NinaCompiler {
                                 }
                                 buf_elses.Add(
                                     (
-                                        new NinaASTIdentifierExpression("true"),
+                                        new NinaASTIdentifierExpression(
+                                            "true",
+                                            tmpPos
+                                        ),
                                         body
                                     )
                                 );
-                                main.block_else = NinaCompilerUtil.resolve_elses(buf_elses);
+                                main.block_else
+                                    = NinaCompilerUtil.resolve_elses(
+                                        buf_elses,
+                                        v
+                                    );
                                 buf_elses.Clear();
                                 allow_elseif = false;
                             }
@@ -423,7 +450,8 @@ static class NinaCompiler {
                         block.stms.Add(
                             new NinaASTWordStatement(
                                 _type: NinaKeywordType.Return,
-                                _expr: expr
+                                _expr: expr,
+                                _pos: expr.pos
                             )
                         );
                     }
@@ -438,7 +466,10 @@ static class NinaCompiler {
                     else {
                         block.stms.Add(
                             new NinaASTWordStatement(
-                                (NinaKeywordType) v.val_kw !
+                                (NinaKeywordType) v.val_kw !,
+                                new NinaErrorPosition(
+                                    v.file, v.line, v.col
+                                )
                             )
                         );
                     }
@@ -457,7 +488,11 @@ static class NinaCompiler {
                             526905,
                             new NinaErrorPosition(v.file, v.line, v.col));
                     }
-                    NinaASTSuperListExpression plist = new NinaASTSuperListExpression();
+                    NinaASTSuperListExpression plist = new NinaASTSuperListExpression(
+                        new NinaErrorPosition(
+                            braL.file, braL.line, braL.col
+                        )
+                    );
                     
                     if (_i + 1 <= _blocks.Count - 1
                             && _blocks[_i + 1].val_op != NinaOperatorType.BraR) {
@@ -541,6 +576,10 @@ static class NinaCompiler {
                         _cscope: NinaScopeType.Function
                     );
                     string id = NinaCompilerUtil.format_identifier(name.code);
+                    NinaErrorPosition tmpPos
+                        = new NinaErrorPosition(
+                            v.file, v.line, v.col
+                        );
                     block.stms.Add(
                         new NinaASTVarStatement(
                             _isGlobal:
@@ -553,11 +592,14 @@ static class NinaCompiler {
                                         new NinaASTBinaryExpression(
                                             _type: NinaOperatorType.Arr,
                                             _expr_l: plist,
-                                            _expr_r: body
+                                            _expr_r: body,
+                                            plist.pos
                                         )
                                     )
-                                }
-                            )
+                                },
+                                tmpPos
+                            ),
+                            _pos: tmpPos
                         )
                     );
                 }
@@ -577,7 +619,8 @@ static class NinaCompiler {
                 else {
                     block.stms.Add(
                         new NinaASTExpressionStatement(
-                            expr
+                            expr,
+                            expr.pos
                         )
                     );
                 }
@@ -604,7 +647,8 @@ static class NinaCompiler {
                 main.Invoke(null, null);
             }
             catch (Exception ex) {
-                NinaError.error(ex.ToString(), 509470);
+                NinaError.error(
+                    "unexpected error: \n" + ex.ToString(), 509470);
             }
         }
     }

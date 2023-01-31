@@ -228,6 +228,13 @@ public static class NinaAPIUtil {
     public static void error(string _msg, int _uniqueCode) {
         NinaError.error(_msg, _uniqueCode);
     }
+    public static void error_full(
+            string _msg, int _uniqueCode,
+            string _file, int _line, int _col) {
+        NinaError.error(_msg, _uniqueCode, new NinaErrorPosition(
+            _file, _line, _col
+        ));
+    }
 }
 
 public static class NinaAPI {

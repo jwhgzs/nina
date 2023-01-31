@@ -1,40 +1,47 @@
 namespace Nina;
 
 abstract class ANinaAST {
-    private List<string> annos = new List<string>();
-    public void add_annos(string _content) {
-        annos.Add(_content);
-    }
-    public bool has_annos(string _content) {
-        return annos.Contains(_content);
+    public List<string> annos = new List<string>();
+    public NinaErrorPosition pos;
+    public ANinaAST(NinaErrorPosition _pos) {
+        pos = _pos;
     }
 }
 
 abstract class ANinaASTExpression : ANinaAST {
     public NinaOperatorType? type;
+    public ANinaASTExpression(NinaErrorPosition _pos)
+            : base(_pos) {}
 }
-abstract class ANinaASTCommonExpression : ANinaASTExpression {}
+abstract class ANinaASTCommonExpression : ANinaASTExpression {
+    public ANinaASTCommonExpression(NinaErrorPosition _pos)
+            : base(_pos) {}
+}
 
 class NinaASTLiteralExpression : ANinaASTCommonExpression {
     public new NinaCodeBlockType type;
     public string? val_s;
     public double? val_d;
-    public NinaASTLiteralExpression(string _val) {
+    public NinaASTLiteralExpression(string _val, NinaErrorPosition _pos)
+            : base(_pos) {
         type = NinaCodeBlockType.String;
         val_s = _val;
     }
-    public NinaASTLiteralExpression(double _val) {
+    public NinaASTLiteralExpression(double _val, NinaErrorPosition _pos)
+            : base(_pos) {
         type = NinaCodeBlockType.Number;
         val_d = _val;
     }
-    public NinaASTLiteralExpression() {
+    public NinaASTLiteralExpression(NinaErrorPosition _pos)
+            : base(_pos) {
         type = NinaCodeBlockType.None;
     }
 }
 class NinaASTIdentifierExpression : ANinaASTCommonExpression {
     public new NinaCodeBlockType type;
     public string name;
-    public NinaASTIdentifierExpression(string _idname) {
+    public NinaASTIdentifierExpression(string _idname, NinaErrorPosition _pos)
+            : base(_pos) {
         type = NinaCodeBlockType.Identifier;
         name = _idname;
     }
@@ -44,7 +51,8 @@ class NinaASTBinaryExpression : ANinaASTCommonExpression {
     public ANinaASTExpression expr_r;
     public NinaASTBinaryExpression(
             NinaOperatorType _type, ANinaASTExpression _expr_l,
-            ANinaASTExpression _expr_r) {
+            ANinaASTExpression _expr_r, NinaErrorPosition _pos)
+            : base(_pos) {
         type = _type;
         expr_l = _expr_l;
         expr_r = _expr_r;
@@ -53,35 +61,43 @@ class NinaASTBinaryExpression : ANinaASTCommonExpression {
 class NinaASTUnaryExpression : ANinaASTCommonExpression {
     public ANinaASTExpression expr;
     public NinaASTUnaryExpression(
-            NinaOperatorType _type, ANinaASTExpression _expr) {
+            NinaOperatorType _type, ANinaASTExpression _expr, NinaErrorPosition _pos)
+            : base(_pos) {
         type = _type;
         expr = _expr;
     }
 }
 class NinaASTListExpression : ANinaASTExpression {
     public List<ANinaASTExpression> list;
-    public NinaASTListExpression(List<ANinaASTExpression> _list) {
+    public NinaASTListExpression(List<ANinaASTExpression> _list, NinaErrorPosition _pos)
+            : base(_pos) {
         list = _list;
     }
-    public NinaASTListExpression() {
+    public NinaASTListExpression(NinaErrorPosition _pos)
+            : base(_pos) {
         list = new List<ANinaASTExpression>();
     }
 }
 class NinaASTSuperListExpression : ANinaASTExpression {
     public List<(string, ANinaASTExpression?)> list;
-    public NinaASTSuperListExpression(List<(string, ANinaASTExpression?)> _list) {
+    public NinaASTSuperListExpression(List<(string, ANinaASTExpression?)> _list,
+            NinaErrorPosition _pos)
+            : base(_pos) {
         list = _list;
     }
-    public NinaASTSuperListExpression() {
+    public NinaASTSuperListExpression(NinaErrorPosition _pos)
+            : base(_pos) {
         list = new List<(string, ANinaASTExpression?)>();
     }
 }
 class NinaASTBlockExpression : ANinaASTExpression {
     public List<ANinaASTStatement> stms;
-    public NinaASTBlockExpression(List<ANinaASTStatement> _stms) {
+    public NinaASTBlockExpression(List<ANinaASTStatement> _stms, NinaErrorPosition _pos)
+            : base(_pos) {
         stms = _stms;
     }
-    public NinaASTBlockExpression() {
+    public NinaASTBlockExpression(NinaErrorPosition _pos)
+            : base(_pos) {
         stms = new List<ANinaASTStatement>();
     }
 }
@@ -89,11 +105,13 @@ class NinaASTObjectExpression : ANinaASTCommonExpression {
     public bool isArray;
     public NinaASTBlockExpression? block;
     public NinaASTListExpression? list;
-    public NinaASTObjectExpression(NinaASTBlockExpression _block) {
+    public NinaASTObjectExpression(NinaASTBlockExpression _block, NinaErrorPosition _pos)
+            : base(_pos) {
         block = _block;
         isArray = false;
     }
-    public NinaASTObjectExpression(NinaASTListExpression _list) {
+    public NinaASTObjectExpression(NinaASTListExpression _list, NinaErrorPosition _pos)
+            : base(_pos) {
         list = _list;
         isArray = true;
     }
@@ -102,10 +120,13 @@ class NinaASTObjectExpression : ANinaASTCommonExpression {
 abstract class ANinaASTStatement : ANinaAST {
     public ANinaASTExpression? expr;
     public NinaASTBlockExpression? block;
+    public ANinaASTStatement(NinaErrorPosition _pos)
+            : base(_pos) {}
 }
 
 class NinaASTExpressionStatement : ANinaASTStatement {
-    public NinaASTExpressionStatement(ANinaASTExpression _expr) {
+    public NinaASTExpressionStatement(ANinaASTExpression _expr, NinaErrorPosition _pos)
+            : base(_pos) {
         expr = _expr;
     }
 }
@@ -113,7 +134,9 @@ class NinaASTIfStatement : ANinaASTStatement {
     public NinaASTBlockExpression? block_else;
     public NinaASTIfStatement(
             ANinaASTExpression _expr, NinaASTBlockExpression _block,
-            NinaASTBlockExpression? _block_else = null) {
+            NinaErrorPosition _pos,
+            NinaASTBlockExpression? _block_else = null)
+            : base(_pos) {
         expr = _expr;
         block = _block;
         block_else = _block_else;
@@ -121,7 +144,9 @@ class NinaASTIfStatement : ANinaASTStatement {
 }
 class NinaASTWhileStatement : ANinaASTStatement {
     public NinaASTWhileStatement(
-            ANinaASTExpression _expr, NinaASTBlockExpression _block) {
+            ANinaASTExpression _expr, NinaASTBlockExpression _block,
+            NinaErrorPosition _pos)
+            : base(_pos) {
         expr = _expr;
         block = _block;
     }
@@ -131,9 +156,11 @@ class NinaASTVarStatement : ANinaASTStatement {
     public NinaASTSuperListExpression vars;
     public NinaASTVarStatement(
             bool _isGlobal,
+            NinaErrorPosition _pos,
             NinaASTSuperListExpression? _vars = null,
-            bool _isConst = false) {
-        vars = _vars ?? new NinaASTSuperListExpression();
+            bool _isConst = false)
+            : base(_pos) {
+        vars = _vars ?? new NinaASTSuperListExpression(_pos);
         isConst = _isConst;
         isGlobal = _isGlobal;
     }
@@ -141,7 +168,9 @@ class NinaASTVarStatement : ANinaASTStatement {
 class NinaASTWordStatement : ANinaASTStatement {
     public NinaKeywordType type;
     public NinaASTWordStatement(
-            NinaKeywordType _type, ANinaASTExpression? _expr = null) {
+            NinaKeywordType _type, NinaErrorPosition _pos,
+            ANinaASTExpression? _expr = null)
+            : base(_pos)  {
         type = _type;
         expr = _expr;
     }

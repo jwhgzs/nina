@@ -104,29 +104,36 @@ class NinaExprTree {
         _tree.append(this);
     }
     public ANinaASTExpression compile(bool _isRoot = true) {
+        NinaErrorPosition pos
+            = new NinaErrorPosition(
+                block.file, block.line, block.col
+            );
         if (type == NinaExprTreeType.CompiledBlock) {
             return compiledBlock !;
         }
         else if (type == NinaExprTreeType.Void) {
-            return new NinaASTListExpression();
+            return new NinaASTListExpression(pos);
         }
         else if (type == NinaExprTreeType.Data) {
             if (block.type == NinaCodeBlockType.Identifier) {
                 return
                     new NinaASTIdentifierExpression(
-                        NinaCompilerUtil.format_identifier(block.code)
+                        NinaCompilerUtil.format_identifier(block.code),
+                        pos
                     );
             }
             else if (block.type == NinaCodeBlockType.Number) {
                 return
                     new NinaASTLiteralExpression(
-                        (double) block.val_num !
+                        (double) block.val_num !,
+                        pos
                     );
             }
             else if (block.type == NinaCodeBlockType.String) {
                 return
                     new NinaASTLiteralExpression(
-                        block.val_str !
+                        block.val_str !,
+                        pos
                     );
             }
             else {
@@ -164,7 +171,8 @@ class NinaExprTree {
                         return new NinaASTBinaryExpression(
                             _type: NinaOperatorType.Arr,
                             _expr_l: plist,
-                            _expr_r: compiledBlock_r
+                            _expr_r: compiledBlock_r,
+                            pos
                         );
                     }
                 }
@@ -195,7 +203,8 @@ class NinaExprTree {
                             };
                         list.AddRange(list_r.list);
                         list_l = new NinaASTListExpression(
-                            list
+                            list,
+                            pos
                         );
                         return list_l;
                     }
@@ -204,7 +213,8 @@ class NinaExprTree {
                             new NinaASTListExpression(
                                 new List<ANinaASTExpression>() {
                                     expr_l, expr_r
-                                }
+                                },
+                                pos
                             );
                     }
                     else {
@@ -225,7 +235,8 @@ class NinaExprTree {
                             new NinaASTBinaryExpression(
                                 _type: NinaOperatorType.BraL,
                                 _expr_l: expr_l,
-                                _expr_r: list_r
+                                _expr_r: list_r,
+                                pos
                             );
                     }
                     else if (expr_r != null) {
@@ -236,8 +247,10 @@ class NinaExprTree {
                                 _expr_r: new NinaASTListExpression(
                                     new List<ANinaASTExpression>() {
                                         expr_r
-                                    }
-                                )
+                                    },
+                                    pos
+                                ),
+                                pos
                             );
                     }
                     else {
@@ -260,7 +273,8 @@ class NinaExprTree {
                         new NinaASTBinaryExpression(
                             _type: NinaOperatorType.MBraL,
                             _expr_l: expr_l,
-                            _expr_r: expr_r
+                            _expr_r: expr_r,
+                            pos
                         );
                 }
                 else if (block.val_op == NinaOperatorType.Dot) {
@@ -279,8 +293,10 @@ class NinaExprTree {
                                 _type: NinaOperatorType.MBraL,
                                 _expr_l: expr_l,
                                 _expr_r: new NinaASTLiteralExpression(
-                                    NinaCompilerUtil.unformat_identifier(id.name)
-                                )
+                                    NinaCompilerUtil.unformat_identifier(id.name),
+                                    pos
+                                ),
+                                pos
                             );
                     }
                 }
@@ -289,7 +305,8 @@ class NinaExprTree {
                         new NinaASTBinaryExpression(
                             _type: NinaOperatorType.Equ,
                             _expr_l: expr_l,
-                            _expr_r: expr_r
+                            _expr_r: expr_r,
+                            pos
                         );
                 }
                 else if (block.val_op == NinaOperatorType.LOr
@@ -298,7 +315,8 @@ class NinaExprTree {
                         new NinaASTBinaryExpression(
                             _type: (NinaOperatorType) block.val_op !,
                             _expr_l: expr_l,
-                            _expr_r: expr_r
+                            _expr_r: expr_r,
+                            pos
                         );
                 }
                 else {
@@ -309,13 +327,16 @@ class NinaExprTree {
                                 new NinaASTIdentifierExpression(
                                     NinaConstsProviderUtil.CSHARP_NINAAPIUTIL_PREFIX
                                         + "op"
-                                        + block.val_op.ToString()
+                                        + block.val_op.ToString(),
+                                    pos
                                 ),
                             _expr_r: new NinaASTListExpression(
                                 new List<ANinaASTExpression>() {
                                     expr_l, expr_r
-                                }
-                            )
+                                },
+                                pos
+                            ),
+                            pos
                         );
                 }
             }
@@ -335,14 +356,16 @@ class NinaExprTree {
                     }
                     return
                         new NinaASTObjectExpression(
-                            NinaCompilerUtil.transfer_block2init(compiledBlock !, block)
+                            NinaCompilerUtil.transfer_block2init(compiledBlock !, block),
+                            pos
                         );
                 }
                 else if (block.val_op == NinaOperatorType.Array) {
                     if (list != null) {
                         return
                             new NinaASTObjectExpression(
-                                list !
+                                list !,
+                                pos
                             );
                     }
                     else if (expr != null) {
@@ -351,8 +374,10 @@ class NinaExprTree {
                                 new NinaASTListExpression(
                                     new List<ANinaASTExpression>() {
                                         expr
-                                    }
-                                )
+                                    },
+                                    pos
+                                ),
+                                pos
                             );
                     }
                     else {
@@ -371,7 +396,7 @@ class NinaExprTree {
                         new NinaErrorPosition(block.file, block.line, block.col));
                 }
                 else if (block.val_op == NinaOperatorType.At) {
-                    node.add_annos(NinaConstsProviderUtil.CSHARP_ANNO_SPECIALARG);
+                    node.annos.Add(NinaConstsProviderUtil.CSHARP_ANNO_SPECIALARG);
                     return node;
                 }
                 else {
@@ -382,13 +407,16 @@ class NinaExprTree {
                                 new NinaASTIdentifierExpression(
                                     NinaConstsProviderUtil.CSHARP_NINAAPIUTIL_PREFIX
                                         + "op"
-                                        + block.val_op.ToString()
+                                        + block.val_op.ToString(),
+                                    pos
                                 ),
                             _expr_r: new NinaASTListExpression(
                                 new List<ANinaASTExpression>() {
                                     expr
-                                }
-                            )
+                                },
+                                pos
+                            ),
+                            pos
                         );
                 }
             }
@@ -397,6 +425,6 @@ class NinaExprTree {
             NinaError.error("unexpected error.", 214128);
         }
 
-        return new NinaASTLiteralExpression();
+        return new NinaASTLiteralExpression(pos);
     }
 }

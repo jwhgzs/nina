@@ -11,7 +11,7 @@ static class NinaILCompiler {
             case "object":
                 return typeof(NinaDataObject).GetConstructors()[0];
         }
-        NinaError.error("undefined inner constructor.", 256651);
+        NinaError.error("unexpected error.", 256651);
         return null !;
     }
     public static MethodInfo? compile_innerFunc(string _func) {
@@ -73,7 +73,8 @@ static class NinaILCompiler {
                 _g.Emit(OpCodes.Ldsfld, from_glob_const);
             }
             else {
-                NinaError.error("undefined variable.", 997023);
+                NinaError.error("undefined variable.",
+                    997023, _id.pos);
             }
         }
         else {
@@ -83,24 +84,28 @@ static class NinaILCompiler {
             }
             else if (_local_consts.TryGetValue(idname,
                     out LocalBuilder? from_local_consts)) {
-                NinaError.error("invalid assignment to constant.", 491293);
+                NinaError.error("invalid assignment to constant.",
+                    491293, _id.pos);
             }
             else if (_fields.TryGetValue(idname,
                     out FieldInfo? from_field)) {
                 _g.Emit(OpCodes.Stsfld, from_field);
             }
             else if (_field_consts.TryGetValue(idname, out _)) {
-                NinaError.error("invalid assignment to constant.", 529931);
+                NinaError.error("invalid assignment to constant.",
+                    529931, _id.pos);
             }
             else if (_globs.TryGetValue(idname,
                     out FieldInfo? from_glob)) {
                 _g.Emit(OpCodes.Stsfld, from_glob);
             }
             else if (_glob_consts.TryGetValue(idname, out _)) {
-                NinaError.error("invalid assignment to constant.", 493929);
+                NinaError.error("invalid assignment to constant.",
+                    493929, _id.pos);
             }
             else {
-                NinaError.error("undefined variable.", 194161);
+                NinaError.error("undefined variable.",
+                    194161, _id.pos);
             }
         }
     }
@@ -378,7 +383,7 @@ static class NinaILCompiler {
                     );
                 }
                 else {
-                    NinaError.error("invalid lvalue.", 807500);
+                    NinaError.error("invalid lvalue.", 807500, binary.pos);
                 }
             }
             else if (binary.type == NinaOperatorType.MBraL) {
@@ -426,7 +431,8 @@ static class NinaILCompiler {
                         ?? new NinaASTListExpression(
                             new List<ANinaASTExpression>() {
                                 binary.expr_r
-                            }
+                            },
+                            binary.expr_r.pos
                         );
                 List<ANinaASTExpression> args
                     = args_raw.list;
@@ -488,7 +494,10 @@ static class NinaILCompiler {
                                 _mb: _mb,
                                 _cl: _cl,
                                 _g: _g,
-                                _expr: new NinaASTIdentifierExpression("this"),
+                                _expr: new NinaASTIdentifierExpression(
+                                    "this",
+                                    binary.expr_l.pos
+                                ),
                                 _globs: _globs,
                                 _glob_consts: _glob_consts,
                                 _closure_builder: _closure_builder,
@@ -509,13 +518,16 @@ static class NinaILCompiler {
                     _g.Emit(OpCodes.Brtrue, label);
                     _g.Emit(OpCodes.Ldstr, "invalid function to call.");
                     _g.Emit(OpCodes.Ldc_I4, 949921);
-                    _g.Emit(OpCodes.Call, typeof(NinaAPIUtil).GetMethod("error") !);
+                    _g.Emit(OpCodes.Ldstr, binary.pos.file);
+                    _g.Emit(OpCodes.Ldc_I4, binary.pos.line);
+                    _g.Emit(OpCodes.Ldc_I4, binary.pos.col);
+                    _g.Emit(OpCodes.Call, typeof(NinaAPIUtil).GetMethod("error_full") !);
                     _g.MarkLabel(label);
                     _g.Emit(OpCodes.Ldc_I4, args.Count + 1);
                     _g.Emit(OpCodes.Newarr, typeof(object));
                     _g.Emit(OpCodes.Dup);
                     _g.Emit(OpCodes.Ldc_I4_0);
-                    if (args.Count > 0 && args[0].has_annos(
+                    if (args.Count > 0 && args[0].annos.Contains(
                             NinaConstsProviderUtil.CSHARP_ANNO_SPECIALARG)) {
                         compile_expr(
                             _mb: _mb,
@@ -567,7 +579,7 @@ static class NinaILCompiler {
                         NinaError.error(
                             "you must line up your arguments " +
                             "when calling built-in functions.",
-                            645668);
+                            645668, binary.pos);
                     }
                     for (int i = 0; i < args.Count; ++ i) {
                         ANinaASTExpression v = args[i];
@@ -620,7 +632,8 @@ static class NinaILCompiler {
                             _cl: _cl,
                             _g: _g,
                             _expr: new NinaASTLiteralExpression(
-                                key_raw
+                                key_raw,
+                                val.pos
                             ),
                             _globs: _globs,
                             _glob_consts: _glob_consts,
@@ -667,7 +680,8 @@ static class NinaILCompiler {
                         _cl: _cl,
                         _g: _g,
                         _expr: new NinaASTLiteralExpression(
-                            i
+                            i,
+                            v.pos
                         ),
                         _globs: _globs,
                         _glob_consts: _glob_consts,
