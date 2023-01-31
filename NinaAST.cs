@@ -13,7 +13,7 @@ abstract class ANinaAST {
 abstract class ANinaASTExpression : ANinaAST {
     public NinaOperatorType? type;
 }
-abstract class ANinaASTCommonExpression : ANinaASTExpression {};
+abstract class ANinaASTCommonExpression : ANinaASTExpression {}
 
 class NinaASTLiteralExpression : ANinaASTCommonExpression {
     public new NinaCodeBlockType type;
