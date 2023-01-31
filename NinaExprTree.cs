@@ -141,14 +141,8 @@ class NinaExprTree {
             else if (block.val_op_unary == false) {
                 ANinaASTExpression node_l = l!.compile(false);
                 ANinaASTExpression node_r = r!.compile(false);
-                NinaASTBinaryExpression? bexpr_l = node_l as NinaASTBinaryExpression;
-                NinaASTBinaryExpression? bexpr_r = node_r as NinaASTBinaryExpression;
-                NinaASTUnaryExpression? uexpr_l = node_l as NinaASTUnaryExpression;
-                NinaASTUnaryExpression? uexpr_r = node_r as NinaASTUnaryExpression;
-                ANinaASTExpression? expr_l
-                    = bexpr_l != null ? bexpr_l : uexpr_l;
-                ANinaASTExpression? expr_r
-                    = bexpr_r != null ? bexpr_r : uexpr_r;
+                ANinaASTExpression? expr_l = node_l as ANinaASTCommonExpression;
+                ANinaASTExpression? expr_r = node_r as ANinaASTCommonExpression;
                 NinaASTListExpression? list_l = node_l as NinaASTListExpression;
                 NinaASTListExpression? list_r = node_r as NinaASTListExpression;
                 NinaASTBlockExpression? compiledBlock_l = node_l as NinaASTBlockExpression;
@@ -282,7 +276,7 @@ class NinaExprTree {
                     else {
                         return
                             new NinaASTBinaryExpression(
-                                _type: NinaOperatorType.BraL,
+                                _type: NinaOperatorType.MBraL,
                                 _expr_l: expr_l,
                                 _expr_r: new NinaASTLiteralExpression(
                                     id.name
@@ -327,10 +321,7 @@ class NinaExprTree {
             }
             else {
                 ANinaASTExpression node = r!.compile(false);
-                NinaASTBinaryExpression? bexpr = node as NinaASTBinaryExpression;
-                NinaASTUnaryExpression? uexpr = node as NinaASTUnaryExpression;
-                ANinaASTExpression? expr
-                    = bexpr != null ? bexpr : uexpr;
+                ANinaASTExpression? expr = node as ANinaASTCommonExpression;
                 NinaASTListExpression? list = node as NinaASTListExpression;
                 NinaASTBlockExpression? compiledBlock = node as NinaASTBlockExpression;
                 

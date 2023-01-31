@@ -99,11 +99,7 @@ static class NinaILCompiler {
             else if (_glob_consts.TryGetValue(idname, out _)) {
                 NinaError.error("invalid assignment to constant.", 493929);
             }
-            else if (idname == "aux") {
-                _g.Emit(OpCodes.Pop);
-            }
             else {
-                Console.WriteLine(idname);
                 NinaError.error("undefined variable.", 194161);
             }
         }
@@ -119,12 +115,19 @@ static class NinaILCompiler {
             Dictionary<string, LocalBuilder> _local_consts,
             TypeBuilder? _closure_builder = null) {
         if (_expr is NinaASTLiteralExpression lit) {
-            if (lit.type == NinaCodeBlockType.Number)
+            if (lit.type == NinaCodeBlockType.Number) {
                 _g.Emit(OpCodes.Ldc_R8, (double) lit.val_d !);
-            else if (lit.type == NinaCodeBlockType.String)
+                _g.Emit(OpCodes.Box, typeof(double));
+            }
+            else if (lit.type == NinaCodeBlockType.String) {
                 _g.Emit(OpCodes.Ldstr, lit.val_s !);
-            else
+            }
+            else if (lit.type == NinaCodeBlockType.None) {
+                _g.Emit(OpCodes.Ldnull);
+            }
+            else {
                 NinaError.error("unexpected error.", 120591);
+            }
         }
         else if (_expr is NinaASTIdentifierExpression id) {
             compile_identifier(
@@ -419,7 +422,12 @@ static class NinaILCompiler {
                     : null;
                 bool isInner = inner != null;
                 NinaASTListExpression args_raw
-                    = (binary.expr_r as NinaASTListExpression) !;
+                    = (binary.expr_r as NinaASTListExpression)
+                        ?? new NinaASTListExpression(
+                            new List<ANinaASTExpression>() {
+                                binary.expr_r
+                            }
+                        );
                 List<ANinaASTExpression> args
                     = args_raw.list;
                 if (! isInner) {
@@ -611,7 +619,7 @@ static class NinaILCompiler {
                             _mb: _mb,
                             _cl: _cl,
                             _g: _g,
-                            _expr: new NinaASTIdentifierExpression(
+                            _expr: new NinaASTLiteralExpression(
                                 key_raw
                             ),
                             _globs: _globs,
@@ -648,6 +656,52 @@ static class NinaILCompiler {
                         _g.Emit(OpCodes.Pop);
                     }
                 }
+            }
+            else if (list != null) {
+                for (int i = 0; i < list.list.Count; ++ i) {
+                    ANinaASTExpression v
+                        = list.list[i] as ANinaASTExpression;
+                    _g.Emit(OpCodes.Dup);
+                    compile_expr(
+                        _mb: _mb,
+                        _cl: _cl,
+                        _g: _g,
+                        _expr: new NinaASTLiteralExpression(
+                            i
+                        ),
+                        _globs: _globs,
+                        _glob_consts: _glob_consts,
+                        _closure_builder: _closure_builder,
+                        _fields: _fields,
+                        _field_consts: _field_consts,
+                        _locals: _locals,
+                        _local_consts: _local_consts
+                    );
+                    compile_expr(
+                        _mb: _mb,
+                        _cl: _cl,
+                        _g: _g,
+                        _expr: v,
+                        _globs: _globs,
+                        _glob_consts: _glob_consts,
+                        _closure_builder: _closure_builder,
+                        _fields: _fields,
+                        _field_consts: _field_consts,
+                        _locals: _locals,
+                        _local_consts: _local_consts
+                    );
+                    _g.Emit(OpCodes.Ldc_I4_0);
+                    _g.EmitCall(
+                        opcode: OpCodes.Call,
+                        methodInfo:
+                            typeof(NinaAPIUtil).GetMethod("member_init") !,
+                        optionalParameterTypes: null
+                    );
+                    _g.Emit(OpCodes.Pop);
+                }
+            }
+            else {
+                NinaError.error("unexpected error.", 293012);
             }
         }
         else {

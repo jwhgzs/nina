@@ -13,8 +13,9 @@ abstract class ANinaAST {
 abstract class ANinaASTExpression : ANinaAST {
     public NinaOperatorType? type;
 }
+abstract class ANinaASTCommonExpression : ANinaASTExpression {};
 
-class NinaASTLiteralExpression : ANinaASTExpression {
+class NinaASTLiteralExpression : ANinaASTCommonExpression {
     public new NinaCodeBlockType type;
     public string? val_s;
     public double? val_d;
@@ -30,7 +31,7 @@ class NinaASTLiteralExpression : ANinaASTExpression {
         type = NinaCodeBlockType.None;
     }
 }
-class NinaASTIdentifierExpression : ANinaASTExpression {
+class NinaASTIdentifierExpression : ANinaASTCommonExpression {
     public new NinaCodeBlockType type;
     public string name;
     public NinaASTIdentifierExpression(string _idname) {
@@ -38,7 +39,7 @@ class NinaASTIdentifierExpression : ANinaASTExpression {
         name = _idname;
     }
 }
-class NinaASTBinaryExpression : ANinaASTExpression {
+class NinaASTBinaryExpression : ANinaASTCommonExpression {
     public ANinaASTExpression expr_l;
     public ANinaASTExpression expr_r;
     public NinaASTBinaryExpression(
@@ -49,7 +50,7 @@ class NinaASTBinaryExpression : ANinaASTExpression {
         expr_r = _expr_r;
     }
 }
-class NinaASTUnaryExpression : ANinaASTExpression {
+class NinaASTUnaryExpression : ANinaASTCommonExpression {
     public ANinaASTExpression expr;
     public NinaASTUnaryExpression(
             NinaOperatorType _type, ANinaASTExpression _expr) {
@@ -84,7 +85,7 @@ class NinaASTBlockExpression : ANinaASTExpression {
         stms = new List<ANinaASTStatement>();
     }
 }
-class NinaASTObjectExpression : ANinaASTExpression {
+class NinaASTObjectExpression : ANinaASTCommonExpression {
     public bool isArray;
     public NinaASTBlockExpression? block;
     public NinaASTListExpression? list;

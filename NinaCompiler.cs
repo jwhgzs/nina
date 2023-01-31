@@ -489,7 +489,9 @@ static class NinaCompiler {
                                 else {
                                     plist.list.Add(
                                         (
-                                            expr.l!.block.code,
+                                            NinaCompilerUtil.format_identifier(
+                                                expr.l!.block.code
+                                            ),
                                             val
                                         )
                                     );
@@ -504,7 +506,9 @@ static class NinaCompiler {
                                 }
                                 plist.list.Add(
                                     (
-                                        expr.block.code,
+                                        NinaCompilerUtil.format_identifier(
+                                            expr.block.code
+                                        ),
                                         null
                                     )
                                 );
@@ -538,17 +542,21 @@ static class NinaCompiler {
                     );
                     string id = NinaCompilerUtil.format_identifier(name.code);
                     block.stms.Add(
-                        new NinaASTExpressionStatement(
-                            new NinaASTBinaryExpression(
-                                _type: NinaOperatorType.Equ,
-                                _expr_l: new NinaASTIdentifierExpression(
-                                    id
-                                ),
-                                _expr_r: new NinaASTBinaryExpression(
-                                    _type: NinaOperatorType.Arr,
-                                    _expr_l: plist,
-                                    _expr_r: body
-                                )
+                        new NinaASTVarStatement(
+                            _isGlobal:
+                                (_scope & NinaScopeType.Function)
+                                    != NinaScopeType.Function,
+                            _vars: new NinaASTSuperListExpression(
+                                new List<(string, ANinaASTExpression?)> {
+                                    (
+                                        id,
+                                        new NinaASTBinaryExpression(
+                                            _type: NinaOperatorType.Arr,
+                                            _expr_l: plist,
+                                            _expr_r: body
+                                        )
+                                    )
+                                }
                             )
                         )
                     );

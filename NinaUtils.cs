@@ -4,7 +4,6 @@ static class NinaConstsProviderUtil {
     public const string CSHARP_ID_PREFIX = "NinaGlobal__";
     public const string CSHARP_NINAAPI_PREFIX = "NinaAPI__";
     public const string CSHARP_NINAAPIUTIL_PREFIX = "NinaAPIUtil__";
-    public const string CSHARP_ANNO_CONST = "NINA_ANNO_CONST";
     public const string CSHARP_ANNO_SPECIALARG = "NINA_ANNO_SPECIALARG";
     public const string IL_BUILTIN_ID_PREFIX = "NINA_BUILTIN_";
     public const string IL_CLOSURECLASS_ID_PREFIX = "NINA_CLOSURECLASS_";
@@ -272,6 +271,12 @@ static class NinaCompilerUtil {
         for (int i = 0; i < stms.Count; ++ i) {
             ANinaASTStatement v = stms[i];
             if (v is NinaASTVarStatement vars) {}
+            else if (v is NinaASTWordStatement tmp
+                    && tmp.type == NinaKeywordType.Return
+                    && i == stms.Count - 1) {
+                stms.RemoveAt(i);
+                break;
+            }
             else {
                 NinaError.error(
                     "unexpected expression "

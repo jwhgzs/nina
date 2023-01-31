@@ -3,10 +3,16 @@ namespace Nina;
 public class NinaDataArray: List<object> {
     public Dictionary<int, bool> my_consts
         = new Dictionary<int, bool>();
+    public NinaDataArray(): base() {}
+    public NinaDataArray(List<object> _src)
+            : base(_src) {}
 }
 public class NinaDataObject: Dictionary<string, object> {
     public Dictionary<string, bool> my_consts
         = new Dictionary<string, bool>();
+    public NinaDataObject(): base() {}
+    public NinaDataObject(Dictionary<string, object> _src)
+            : base(_src) {}
 }
 
 public static class NinaAPIUtil {
@@ -44,9 +50,9 @@ public static class NinaAPIUtil {
         else if (_o is string)
             return "[String]";
         else if (_o is NinaDataArray)
-            return "[NinaDataArray]";
+            return "[Array]";
         else if (_o is NinaDataObject)
-            return "[NinaDataObject]";
+            return "[Object]";
         else if (_o is Delegate)
             return "[Function]";
         else
@@ -185,7 +191,7 @@ public static class NinaAPIUtil {
             string key = toString(_key);
             if (obj.my_consts.ContainsKey(key)) {
                 NinaError.error(
-                    "invalid assignment to constant member.",
+                    "invalid assignment to a constant member.",
                     794922);
             }
             obj[key] = _val;
@@ -228,6 +234,120 @@ public static class NinaAPI {
     public static object console_exit() {
         Environment.Exit(- 2);
         return null !;
+    }
+    public static object string_at(object _str, object _i) {
+        string str = NinaAPIUtil.toString(_str);
+        int i = (int) NinaAPIUtil.toNumber(_i);
+        try {
+            return str[i].ToString();
+        }
+        catch {
+            return null !;
+        }
+    }
+    public static object string_sub(object _str, object _i, object _n) {
+        string str = NinaAPIUtil.toString(_str);
+        int i = (int) NinaAPIUtil.toNumber(_i);
+        int n = (int) NinaAPIUtil.toNumber(_n);
+        try {
+            return str.Substring(i, n);
+        }
+        catch {
+            return null !;
+        }
+    }
+    public static object string_sub_to_tail(object _str, object _i) {
+        string str = NinaAPIUtil.toString(_str);
+        int i = (int) NinaAPIUtil.toNumber(_i);
+        try {
+            return str.Substring(i);
+        }
+        catch {
+            return null !;
+        }
+    }
+    public static object string_split(object _str, object _sub) {
+        string str = NinaAPIUtil.toString(_str);
+        string sub = NinaAPIUtil.toString(_sub);
+        try {
+            return new NinaDataArray(
+                str.Split(sub).Select(v => (object) v).ToList()
+            );
+        }
+        catch {
+            return null !;
+        }
+    }
+    public static object string_split_count(object _str, object _sub, object _n) {
+        string str = NinaAPIUtil.toString(_str);
+        string sub = NinaAPIUtil.toString(_sub);
+        int n = (int) NinaAPIUtil.toNumber(_n);
+        try {
+            return new NinaDataArray(
+                str.Split(sub, n).Select(v => (object) v).ToList()
+            );
+        }
+        catch {
+            return null !;
+        }
+    }
+    public static object string_to_array(object _str) {
+        string str = NinaAPIUtil.toString(_str);
+        try {
+            return
+                new NinaDataArray(
+                    str.Select(v => (object) v.ToString()).ToList()
+                );
+        }
+        catch {
+            return null !;
+        }
+    }
+    public static object string_from_array(object _arr) {
+        NinaDataArray? arr = _arr as NinaDataArray;
+        if (arr == null)
+            return null !;
+        string ret = "";
+        for (int i = 0; i < arr.Count; ++ i) {
+            ret += NinaAPIUtil.toString(arr[i]);
+        }
+        return ret;
+    }
+    public static object string_join(object _arr, object _sub) {
+        NinaDataArray? arr = _arr as NinaDataArray;
+        string sub = NinaAPIUtil.toString(_sub);
+        if (arr == null)
+            return null !;
+        string ret = "";
+        for (int i = 0; i < arr.Count; ++ i) {
+            if (i > 0)
+                ret += sub;
+            ret += NinaAPIUtil.toString(arr[i]);
+        }
+        return ret;
+    }
+    public static object string_replace(object _str, object _sub, object _rep) {
+        string str = NinaAPIUtil.toString(_str);
+        string sub = NinaAPIUtil.toString(_sub);
+        string rep = NinaAPIUtil.toString(_rep);
+        return str.Replace(sub, rep);
+    }
+    public static object string_replace_count(
+            object _str, object _sub, object _rep, object _n) {
+        string str = NinaAPIUtil.toString(_str);
+        string sub = NinaAPIUtil.toString(_sub);
+        string rep = NinaAPIUtil.toString(_rep);
+        int n = (int) NinaAPIUtil.toNumber(_n);
+        string[] arr = str.Split(sub, n + 1);
+        return string.Join(rep, arr);
+    }
+    public static object string_upper(object _str) {
+        string str = NinaAPIUtil.toString(_str);
+        return str.ToUpper();
+    }
+    public static object string_lower(object _str) {
+        string str = NinaAPIUtil.toString(_str);
+        return str.ToLower();
     }
     public static object time_now() {
         TimeSpan ts
