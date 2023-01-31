@@ -19,7 +19,7 @@ func fibo(n) {
     }
     // self 变量指代当前函数
     return self(n - 1) + self(n - 2);
-};
+}
 
 // 保存当前时间戳以计时
 var t1 = time_now();

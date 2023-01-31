@@ -24,6 +24,15 @@ func newyear() {
 // 输出 2023 ~
 newyear()();
 
+// Nina任何函数中都预定义有特殊变量 self ，她指向当前函数自身
+//  self 在递归中很有用哦，还能提升一部分性能！
+func fibo(n) {
+    if (n == 1 || n == 2) {
+        return 1;
+    }
+    return self(n - 1) + self(n - 2);
+}
+
 // 在对象或数组环境中调用的函数，有一个内置的特殊变量 this
 // 用 this 可以访问当前函数所在的对象哦！
 var obj = object {
