@@ -1,14 +1,9 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 using System.Reflection;
 
 namespace Nina;
 
 static class NinaCompiler {
     public static NinaExprTree resolve_expr(List<NinaCodeBlock> _blocks,
-            ref ClassDeclarationSyntax _entryCl,
             ref int _i, NinaOperatorType? _ender_op1 = null,
             NinaOperatorType? _ender_op2 = null) {
         if (_blocks.Count == 0)
@@ -83,7 +78,6 @@ static class NinaCompiler {
                 if (isGrouperL) {
                     buf = resolve_expr(
                         _blocks: _blocks,
-                        _entryCl: ref _entryCl,
                         _i: ref _i,
                         _ender_op1: NinaOperatorType.BraR
                     );
@@ -91,9 +85,8 @@ static class NinaCompiler {
                 }
                 else if (isScoperL) {
                     buf = new NinaExprTree(
-                        doCompile(
+                        compile(
                             _blocks: _blocks,
-                            _entryCl: ref _entryCl,
                             _i: ref _i,
                             _scope: NinaScopeType.Function,
                             _cscope: NinaScopeType.Function
@@ -158,7 +151,6 @@ static class NinaCompiler {
                                 || v!.Value.val_op == NinaOperatorType.MBraL) {
                             buf = resolve_expr(
                                 _blocks: _blocks,
-                                _entryCl: ref _entryCl,
                                 _i: ref _i,
                                 _ender_op1:
                                     v!.Value.val_op == NinaOperatorType.BraL
@@ -192,13 +184,12 @@ static class NinaCompiler {
 
         return tree ?? new NinaExprTree(false);
     }
-    public static BlockSyntax doCompile(List<NinaCodeBlock> _blocks,
-            ref ClassDeclarationSyntax _entryCl,
+    public static NinaASTBlockExpression compile(List<NinaCodeBlock> _blocks,
             ref int _i, NinaScopeType _scope = NinaScopeType.Root,
             NinaScopeType _cscope = NinaScopeType.Root) {
-        BlockSyntax stms = Block();
+        NinaASTBlockExpression block = new NinaASTBlockExpression();
         if (_blocks.Count == 0)
-            return stms;
+            return block;
         if (_blocks.Last().val_sy != NinaSymbolType.Sem
                 && _blocks.Last().val_sy != NinaSymbolType.CBraR) {
             NinaError.error("invalid end of file.",
@@ -207,8 +198,8 @@ static class NinaCompiler {
                     _blocks.Last().line, _blocks.Last().col));
         }
         bool allow_elseif = false;
-        List<(ExpressionSyntax, BlockSyntax)> buf_elses
-            = new List<(ExpressionSyntax, BlockSyntax)>();
+        List<(ANinaASTExpression, NinaASTBlockExpression)> buf_elses
+            = new List<(ANinaASTExpression, NinaASTBlockExpression)>();
 
         for (++ _i; _i < _blocks.Count; ++ _i) {
             NinaCodeBlock v = _blocks[_i];
@@ -220,22 +211,24 @@ static class NinaCompiler {
                 }
                 else {
                     if (_cscope == NinaScopeType.Function) {
-                        stms = stms.AddStatements(
-                            ReturnStatement(
-                                LiteralExpression(
-                                    SyntaxKind.NullLiteralExpression
-                                )
+                        block.stms.Add(
+                            new NinaASTWordStatement(
+                                _type: NinaKeywordType.Return,
+                                _expr: new NinaASTLiteralExpression()
                             )
                         );
                     }
-                    return stms;
+                    return block;
                 }
             }
             else if (v.type == NinaCodeBlockType.Keyword) {
                 if (v.val_kw == NinaKeywordType.Var
                         || v.val_kw == NinaKeywordType.Const) {
-                    SeparatedSyntaxList<VariableDeclaratorSyntax> list
-                        = new SeparatedSyntaxList<VariableDeclaratorSyntax>();
+                    NinaASTVarStatement vars = new NinaASTVarStatement(
+                        _isGlobal:
+                            (_scope & NinaScopeType.Function) != NinaScopeType.Function,
+                        _isConst: v.val_kw == NinaKeywordType.Const
+                    );
                     bool isRoot
                         = (_scope & NinaScopeType.Function) != NinaScopeType.Function;
                     
@@ -244,7 +237,6 @@ static class NinaCompiler {
                         do {
                             NinaExprTree expr = resolve_expr(
                                 _blocks: _blocks,
-                                _entryCl: ref _entryCl,
                                 _i: ref _i
                             );
                             if (expr.type == NinaExprTreeType.Void || (
@@ -257,7 +249,8 @@ static class NinaCompiler {
                                     new NinaErrorPosition(v.file, v.line, v.col));
                             }
                             else if (expr.type != NinaExprTreeType.Data) {
-                                ExpressionSyntax? val = expr.r!.compile() as ExpressionSyntax;
+                                ANinaASTExpression? val
+                                    = expr.r!.compile() as ANinaASTExpression;
                                 if (val == null) {
                                     NinaError.error("invalid variable initialization statement.",
                                         123533,
@@ -267,44 +260,15 @@ static class NinaCompiler {
                                     string id = NinaCompilerUtil.format_identifier(
                                         expr.l!.block.code
                                     );
-                                    VariableDeclaratorSyntax clause;
-                                    if (isRoot) {
-                                        clause
-                                            = VariableDeclarator(
-                                                id
-                                            );
-                                        stms = stms.AddStatements(
-                                            ExpressionStatement(
-                                                AssignmentExpression(
-                                                    kind: SyntaxKind.SimpleAssignmentExpression,
-                                                    left: IdentifierName(id),
-                                                    right: val
-                                                )
-                                            )
-                                        );
-                                    }
-                                    else {
-                                        clause
-                                            = VariableDeclarator(
-                                                id
-                                            )
-                                            .WithInitializer(
-                                                EqualsValueClause(
-                                                    val
-                                                )
-                                            );
-                                    }
-                                    list = list.Add(clause);
+                                    vars.vars.list.Add(
+                                        (id, val)
+                                    );
                                 }
                             }
                             else {
-                                VariableDeclaratorSyntax clause
-                                    = VariableDeclarator(
-                                        NinaCompilerUtil.format_identifier(
-                                            expr.block.code
-                                        )
-                                    );
-                                list = list.Add(clause);
+                                vars.vars.list.Add(
+                                    (expr.block.code, null)
+                                );
                             }
                         }
                         while (_i < _blocks.Count
@@ -316,30 +280,7 @@ static class NinaCompiler {
                             new NinaErrorPosition(v.file, v.line, v.col));
                     }
 
-                    VariableDeclarationSyntax vars = VariableDeclaration(
-                        type: PredefinedType(Token(SyntaxKind.ObjectKeyword)),
-                        variables: list
-                    );
-                    if (isRoot) {
-                        FieldDeclarationSyntax stm
-                            = FieldDeclaration(vars);
-                        if (v.val_kw == NinaKeywordType.Const) {
-                            stm = stm.AddModifiers(
-                                Token(SyntaxKind.ConstKeyword)
-                            );
-                        }
-                        _entryCl = _entryCl.AddMembers(stm);
-                    }
-                    else {
-                        LocalDeclarationStatementSyntax stm
-                            = LocalDeclarationStatement(vars);
-                        if (v.val_kw == NinaKeywordType.Const) {
-                            stm = stm.AddModifiers(
-                                Token(SyntaxKind.ConstKeyword)
-                            );
-                        }
-                        stms = stms.AddStatements(stm);
-                    }
+                    block.stms.Add(vars);
                 }
                 else if (v.val_kw == NinaKeywordType.If
                         || v.val_kw == NinaKeywordType.Else
@@ -361,14 +302,13 @@ static class NinaCompiler {
                         = v.val_kw != NinaKeywordType.Else
                             ? resolve_expr(
                                 _blocks: _blocks,
-                                _entryCl: ref _entryCl,
                                 _i: ref _i,
                                 _ender_op1: NinaOperatorType.BraR
                             )
                             : null;
-                    ExpressionSyntax? expr
+                    ANinaASTExpression? expr
                         = v.val_kw != NinaKeywordType.Else
-                            ? tree!.compile() as ExpressionSyntax
+                            ? tree!.compile() as ANinaASTExpression
                             : null;
                     NinaCodeBlock? cBraL
                         = _i + 1 > _blocks.Count - 1
@@ -387,15 +327,12 @@ static class NinaCompiler {
                     }
                     else {
                         if (v.val_kw != NinaKeywordType.Else) {
-                            expr = InvocationExpression(
-                                expression: IdentifierName(
-                                    NinaConstsProviderUtil.CSHARP_NINAAPIUTIL_PREFIX
-                                        + "toBool"
+                            expr = new NinaASTBinaryExpression(
+                                _type: NinaOperatorType.BraL,
+                                _expr_l: new NinaASTIdentifierExpression(
+                                    "NinaAPIUtil__toBool"
                                 ),
-                                argumentList: ArgumentList(
-                                    new SeparatedSyntaxList<ArgumentSyntax>()
-                                        .Add(Argument(expr !))
-                                )
+                                _expr_r: expr !
                             );
                         }
                         NinaScopeType nscope;
@@ -407,64 +344,55 @@ static class NinaCompiler {
                             nscope = NinaScopeType.Elseif;
                         else
                             nscope = NinaScopeType.While;
-                        BlockSyntax body = doCompile(
+                        NinaASTBlockExpression body = compile(
                             _blocks: _blocks,
-                            _entryCl: ref _entryCl,
                             _i: ref _i,
                             _scope: _scope | nscope,
                             _cscope: nscope
                         );
                         if (v.val_kw == NinaKeywordType.If) {
-                            stms = stms.AddStatements(
-                                IfStatement(
-                                    condition: expr !,
-                                    statement: body
+                            block.stms.Add(
+                                new NinaASTIfStatement(
+                                    _expr: expr !,
+                                    _block: body
                                 )
                             );
                             allow_elseif = true;
                         }
                         else if (v.val_kw == NinaKeywordType.While) {
-                            stms = stms.AddStatements(
-                                WhileStatement(
-                                    condition: expr !,
-                                    statement: body
+                            block.stms.Add(
+                                new NinaASTWhileStatement(
+                                    _expr: expr !,
+                                    _block: body
                                 )
                             );
                         }
                         else {
-                            if (stms.Statements.Count == 0) {
+                            if (block.stms.Count == 0) {
                                 NinaError.error("unexpected logical clause statement.",
                                     898170,
                                     new NinaErrorPosition(v.file, v.line, v.col));
                             }
-                            IfStatementSyntax? main
-                                = stms.Statements.Last() as IfStatementSyntax;
+                            NinaASTIfStatement? main
+                                = block.stms.Last() as NinaASTIfStatement;
                             if (main == null) {
                                 NinaError.error("unexpected logical clause statement.",
                                     606056,
                                     new NinaErrorPosition(v.file, v.line, v.col));
                             }
                             else if (v.val_kw == NinaKeywordType.Else) {
-                                if (main.Else != null) {
+                                if (main.block_else != null) {
                                     NinaError.error("unexpected logical clause statement.",
                                         432612,
                                         new NinaErrorPosition(v.file, v.line, v.col));
                                 }
                                 buf_elses.Add(
                                     (
-                                        LiteralExpression(SyntaxKind.TrueLiteralExpression),
+                                        new NinaASTIdentifierExpression("true"),
                                         body
                                     )
                                 );
-                                IfStatementSyntax newMain = main.WithElse(
-                                    ElseClause(
-                                        elseKeyword: Token(SyntaxKind.ElseKeyword),
-                                        statement: NinaCompilerUtil.resolve_elses(buf_elses)
-                                    )
-                                );
-                                stms = stms.ReplaceNode(
-                                    main, newMain
-                                );
+                                main.block_else = NinaCompilerUtil.resolve_elses(buf_elses);
                                 buf_elses.Clear();
                                 allow_elseif = false;
                             }
@@ -482,18 +410,22 @@ static class NinaCompiler {
                     }
                 }
                 else if (v.val_kw == NinaKeywordType.Return) {
-                    ExpressionSyntax? expr = resolve_expr(
+                    ANinaASTExpression? expr = resolve_expr(
                         _blocks: _blocks,
-                        _entryCl: ref _entryCl,
                         _i: ref _i
-                    ).compile() as ExpressionSyntax;
+                    ).compile() as ANinaASTExpression;
                     if (_i > _blocks.Count || _blocks[_i].val_sy != NinaSymbolType.Sem
                             || (_scope & NinaScopeType.Function) != NinaScopeType.Function) {
                         NinaError.error("invalid return statement.", 916850,
                             new NinaErrorPosition(v.file, v.line, v.col));
                     }
                     else {
-                        stms = stms.AddStatements(ReturnStatement(expr));
+                        block.stms.Add(
+                            new NinaASTWordStatement(
+                                _type: NinaKeywordType.Return,
+                                _expr: expr
+                            )
+                        );
                     }
                 }
                 else if (v.val_kw == NinaKeywordType.Break
@@ -504,10 +436,10 @@ static class NinaCompiler {
                             new NinaErrorPosition(v.file, v.line, v.col));
                     }
                     else {
-                        stms = stms.AddStatements(
-                            v.val_kw == NinaKeywordType.Break
-                                ? BreakStatement()
-                                : ContinueStatement()
+                        block.stms.Add(
+                            new NinaASTWordStatement(
+                                (NinaKeywordType) v.val_kw !
+                            )
                         );
                     }
                 }
@@ -525,8 +457,7 @@ static class NinaCompiler {
                             526905,
                             new NinaErrorPosition(v.file, v.line, v.col));
                     }
-                    SeparatedSyntaxList<ParameterSyntax> list
-                        = new SeparatedSyntaxList<ParameterSyntax>();
+                    NinaASTSuperListExpression plist = new NinaASTSuperListExpression();
                     
                     if (_i + 1 <= _blocks.Count - 1
                             && _blocks[_i + 1].val_op != NinaOperatorType.BraR) {
@@ -534,7 +465,6 @@ static class NinaCompiler {
                         do {
                             NinaExprTree expr = resolve_expr(
                                 _blocks: _blocks,
-                                _entryCl: ref _entryCl,
                                 _i: ref _i,
                                 _ender_op1: NinaOperatorType.Com,
                                 _ender_op2: NinaOperatorType.BraR
@@ -549,23 +479,20 @@ static class NinaCompiler {
                                     new NinaErrorPosition(v.file, v.line, v.col));
                             }
                             else if (expr.type != NinaExprTreeType.Data) {
-                                ExpressionSyntax? val = expr.r!.compile() as ExpressionSyntax;
+                                ANinaASTExpression? val
+                                    = expr.r!.compile() as ANinaASTExpression;
                                 if (val == null) {
                                     NinaError.error("invalid function initialization statement.",
                                         116820,
                                         new NinaErrorPosition(v.file, v.line, v.col));
                                 }
                                 else {
-                                    ParameterSyntax clause = Parameter(
-                                        attributeLists: new SyntaxList<AttributeListSyntax>(),
-                                        modifiers: new SyntaxTokenList(),
-                                        type: PredefinedType(Token(SyntaxKind.ObjectKeyword)),
-                                        identifier: Identifier(
-                                            NinaCompilerUtil.format_identifier(expr.l!.block.code)
-                                        ),
-                                        @default: EqualsValueClause(val)
+                                    plist.list.Add(
+                                        (
+                                            expr.l!.block.code,
+                                            val
+                                        )
                                     );
-                                    list = list.Add(clause);
                                     comfortable = true;
                                 }
                             }
@@ -575,16 +502,12 @@ static class NinaCompiler {
                                         535545,
                                         new NinaErrorPosition(v.file, v.line, v.col));
                                 }
-                                ParameterSyntax clause = Parameter(
-                                    attributeLists: new SyntaxList<AttributeListSyntax>(),
-                                    modifiers: new SyntaxTokenList(),
-                                    type: PredefinedType(Token(SyntaxKind.ObjectKeyword)),
-                                    identifier: Identifier(
-                                        NinaCompilerUtil.format_identifier(expr.block.code)
-                                    ),
-                                    @default: null
+                                plist.list.Add(
+                                    (
+                                        expr.block.code,
+                                        null
+                                    )
                                 );
-                                list = list.Add(clause);
                             }
                         }
                         while (_i < _blocks.Count
@@ -607,57 +530,28 @@ static class NinaCompiler {
                             new NinaErrorPosition(v.file, v.line, v.col));
                     }
                     
-                    BlockSyntax body = doCompile(
+                    NinaASTBlockExpression body = compile(
                         _blocks: _blocks,
-                        _entryCl: ref _entryCl,
                         _i: ref _i,
                         _scope: NinaScopeType.Function,
                         _cscope: NinaScopeType.Function
                     );
-                    LambdaExpressionSyntax lambda
-                        = ParenthesizedLambdaExpression()
-                            .WithReturnType(
-                                PredefinedType(Token(SyntaxKind.ObjectKeyword))
-                            )
-                            .WithParameterList(
-                                ParameterList(list)
-                            )
-                            .WithBody(body);
                     string id = NinaCompilerUtil.format_identifier(name.code);
-                    bool isRoot
-                        = (_scope & NinaScopeType.Function) != NinaScopeType.Function;
-                    VariableDeclarationSyntax var
-                        = VariableDeclaration(
-                            type: PredefinedType(Token(SyntaxKind.ObjectKeyword)),
-                            variables: new SeparatedSyntaxList<VariableDeclaratorSyntax>()
-                                .Add(
-                                    isRoot
-                                        ? VariableDeclarator(id)
-                                        : VariableDeclarator(id)
-                                            .WithInitializer(
-                                                EqualsValueClause(
-                                                    lambda
-                                                )
-                                            )
-                                )
-                        );
-                    if (isRoot) {
-                        _entryCl = _entryCl.AddMembers(FieldDeclaration(var));
-                        stms = stms.AddStatements(
-                            ExpressionStatement(
-                                AssignmentExpression(
-                                    kind: SyntaxKind.SimpleAssignmentExpression,
-                                    left: IdentifierName(id),
-                                    right: lambda
+                    block.stms.Add(
+                        new NinaASTExpressionStatement(
+                            new NinaASTBinaryExpression(
+                                _type: NinaOperatorType.Equ,
+                                _expr_l: new NinaASTIdentifierExpression(
+                                    id
+                                ),
+                                _expr_r: new NinaASTBinaryExpression(
+                                    _type: NinaOperatorType.Arr,
+                                    _expr_l: plist,
+                                    _expr_r: body
                                 )
                             )
-                        );
-                    }
-                    else {
-                        stms = stms.AddStatements(
-                            LocalDeclarationStatement(var)
-                        );
-                    }
+                        )
+                    );
                 }
                 else {
                     NinaError.error("unexpected error.",
@@ -667,57 +561,33 @@ static class NinaCompiler {
             }
             else {
                 -- _i;
-                ExpressionSyntax? expr = resolve_expr(
+                ANinaASTExpression? expr = resolve_expr(
                     _blocks: _blocks,
-                    _entryCl: ref _entryCl,
                     _i: ref _i
-                ).compile() as ExpressionSyntax;
+                ).compile() as ANinaASTExpression;
                 if (expr == null) {}
-                else if (expr is not InvocationExpressionSyntax
-                        && expr is not AssignmentExpressionSyntax) {
-                    stms = stms.AddStatements(
-                        ExpressionStatement(
-                            AssignmentExpression(
-                                kind: SyntaxKind.SimpleAssignmentExpression,
-                                left: IdentifierName("aux"),
-                                right: expr
-                            )
-                        )
-                    );
-                }
                 else {
-                    stms = stms.AddStatements(
-                        ExpressionStatement(expr)
+                    block.stms.Add(
+                        new NinaASTExpressionStatement(
+                            expr
+                        )
                     );
                 }
             }
         }
 
-        return stms;
-    }
-    public static ClassDeclarationSyntax compile(List<NinaCodeBlock> _blocks) {
-        ClassDeclarationSyntax cl
-            = ClassDeclaration("NinaEntry");
-        int i = - 1;
-        BlockSyntax body = doCompile(
-            _blocks: _blocks,
-            _entryCl: ref cl,
-            _i: ref i
-        );
-        MethodDeclarationSyntax fn
-            = MethodDeclaration(
-                returnType: 
-                    PredefinedType(Token(SyntaxKind.VoidKeyword)),
-                identifier: "Main"
-            )
-            .WithBody(body);
-        cl = cl.AddMembers(fn);
-        return cl;
+        return block;
     }
     public static void execute(List<NinaCodeBlock> _blocks) {
-        ClassDeclarationSyntax cl = compile(_blocks);
-        Type? entryTp = NinaILCompiler.compile(cl);
-        MethodInfo? main = entryTp != null ? entryTp.GetMethod("Main") : null;
+        int i = - 1;
+        NinaASTBlockExpression block = compile(
+            _blocks: _blocks,
+            _i: ref i
+        );
+        Type? entryTp = NinaILCompiler.compile(block);
+        MethodInfo? main = entryTp != null
+            ? entryTp.GetMethod("Main")
+            : null;
         if (main == null) {
             NinaError.error("unexpected error.", 200164);
         }

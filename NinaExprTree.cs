@@ -1,15 +1,10 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-
 namespace Nina;
 
 class NinaExprTree {
     public NinaExprTree? boss = null;
     public NinaExprTreeType type = NinaExprTreeType.None;
     public NinaCodeBlock block;
-    public BlockSyntax? compiledBlock = null;
+    public NinaASTBlockExpression? compiledBlock = null;
     public NinaExprTree? l = null;
     public NinaExprTree? r = null;
     public NinaExprTree(bool _isPlaceholder) {
@@ -24,7 +19,7 @@ class NinaExprTree {
             ? NinaExprTreeType.Data
             : NinaExprTreeType.Operator;
     }
-    public NinaExprTree(BlockSyntax _compiledBlock) {
+    public NinaExprTree(NinaASTBlockExpression _compiledBlock) {
         compiledBlock = _compiledBlock;
         type = NinaExprTreeType.CompiledBlock;
     }
@@ -108,32 +103,30 @@ class NinaExprTree {
             boss.replace(this, _tree);
         _tree.append(this);
     }
-    public CSharpSyntaxNode compile(bool _isRoot = true) {
+    public ANinaASTExpression compile(bool _isRoot = true) {
         if (type == NinaExprTreeType.CompiledBlock) {
             return compiledBlock !;
         }
         else if (type == NinaExprTreeType.Void) {
-            return ArgumentList();
+            return new NinaASTListExpression();
         }
         else if (type == NinaExprTreeType.Data) {
             if (block.type == NinaCodeBlockType.Identifier) {
                 return
-                    IdentifierName(
-                        name: NinaCompilerUtil.format_identifier(block.code)
+                    new NinaASTIdentifierExpression(
+                        NinaCompilerUtil.format_identifier(block.code)
                     );
             }
             else if (block.type == NinaCodeBlockType.Number) {
                 return
-                    LiteralExpression(
-                        kind: SyntaxKind.NumericLiteralExpression,
-                        token: Literal((double) block.val_num !)
+                    new NinaASTLiteralExpression(
+                        (double) block.val_num !
                     );
             }
             else if (block.type == NinaCodeBlockType.String) {
                 return
-                    LiteralExpression(
-                        kind: SyntaxKind.StringLiteralExpression,
-                        token: Literal(block.val_str !)
+                    new NinaASTLiteralExpression(
+                        block.val_str !
                     );
             }
             else {
@@ -146,32 +139,38 @@ class NinaExprTree {
                 NinaError.error("unexpected error.", 584489);
             }
             else if (block.val_op_unary == false) {
-                CSharpSyntaxNode node_l = l!.compile(false);
-                CSharpSyntaxNode node_r = r!.compile(false);
-                ExpressionSyntax? expr_l = node_l as ExpressionSyntax;
-                ExpressionSyntax? expr_r = node_r as ExpressionSyntax;
-                ArgumentListSyntax? list_l = node_l as ArgumentListSyntax;
-                ArgumentListSyntax? list_r = node_r as ArgumentListSyntax;
-                BlockSyntax? compiledBlock_l = node_l as BlockSyntax;
-                BlockSyntax? compiledBlock_r = node_r as BlockSyntax;
+                ANinaASTExpression node_l = l!.compile(false);
+                ANinaASTExpression node_r = r!.compile(false);
+                NinaASTBinaryExpression? bexpr_l = node_l as NinaASTBinaryExpression;
+                NinaASTBinaryExpression? bexpr_r = node_r as NinaASTBinaryExpression;
+                NinaASTUnaryExpression? uexpr_l = node_l as NinaASTUnaryExpression;
+                NinaASTUnaryExpression? uexpr_r = node_r as NinaASTUnaryExpression;
+                ANinaASTExpression? expr_l
+                    = bexpr_l != null ? bexpr_l : uexpr_l;
+                ANinaASTExpression? expr_r
+                    = bexpr_r != null ? bexpr_r : uexpr_r;
+                NinaASTListExpression? list_l = node_l as NinaASTListExpression;
+                NinaASTListExpression? list_r = node_r as NinaASTListExpression;
+                NinaASTBlockExpression? compiledBlock_l = node_l as NinaASTBlockExpression;
+                NinaASTBlockExpression? compiledBlock_r = node_r as NinaASTBlockExpression;
 
                 if (block.val_op == NinaOperatorType.Arr) {
-                    if (compiledBlock_r == null) {
+                    if ((list_l == null && expr_l == null)
+                            || compiledBlock_r == null) {
                         NinaError.error(
                             "invalid right-hand expression " +
                             "for inline lambda creation operator.", 186009,
                             new NinaErrorPosition(block.file, block.line, block.col));
                     }
                     else {
-                        ParameterListSyntax plist
+                        NinaASTSuperListExpression plist
                             = list_l != null
                                 ? NinaCompilerUtil.transfer_list2params(list_l, block)
                                 : NinaCompilerUtil.transfer_list2params(expr_l !, block);
-                        return ParenthesizedLambdaExpression(
-                            modifiers: TokenList(),
-                            parameterList: plist,
-                            block: compiledBlock_r,
-                            expressionBody: null
+                        return new NinaASTBinaryExpression(
+                            _type: NinaOperatorType.Arr,
+                            _expr_l: plist,
+                            _expr_r: compiledBlock_r
                         );
                     }
                 }
@@ -188,36 +187,39 @@ class NinaExprTree {
                             new NinaErrorPosition(block.file, block.line, block.col));
                     }
                     else if (list_l != null && list_r != null) {
-                        list_l = list_l.AddArguments(
-                            list_r.Arguments.ToArray()
+                        list_l.list.AddRange(list_r.list);
+                        return list_l;
+                    }
+                    else if (list_l != null && expr_r != null) {
+                        list_l.list.Add(expr_r);
+                        return list_l;
+                    }
+                    else if (expr_l != null && list_r != null) {
+                        List<ANinaASTExpression> list
+                            = new List<ANinaASTExpression>() {
+                                expr_l
+                            };
+                        list.AddRange(list_r.list);
+                        list_l = new NinaASTListExpression(
+                            list
                         );
                         return list_l;
                     }
-                    else if (list_l != null && list_r == null) {
-                        list_l = list_l.AddArguments(
-                            Argument(expr_r !)
-                        );
-                        return list_l;
-                    }
-                    else if (list_l == null && list_r != null) {
-                        list_l = ArgumentList(
-                            new SeparatedSyntaxList<ArgumentSyntax>()
-                                .Add(Argument(expr_l !))
-                                .AddRange(list_r.Arguments)
-                        );
-                        return list_l;
+                    else if (expr_l != null && expr_r != null) {
+                        return
+                            new NinaASTListExpression(
+                                new List<ANinaASTExpression>() {
+                                    expr_l, expr_r
+                                }
+                            );
                     }
                     else {
-                        return
-                            ArgumentList(
-                                new SeparatedSyntaxList<ArgumentSyntax>()
-                                    .Add(Argument(expr_l !))
-                                    .Add(Argument(expr_r !))
-                            );
+                        NinaError.error("invalid list expression.", 301923,
+                            new NinaErrorPosition(block.file, block.line, block.col));
                     }
                 }
                 else if (block.val_op == NinaOperatorType.BraL) {
-                    if (list_l != null) {
+                    if (expr_l == null) {
                         NinaError.error(
                             "invalid left-hand expression " +
                             "for function calling operator.",
@@ -226,40 +228,50 @@ class NinaExprTree {
                     }
                     else if (list_r != null) {
                         return
-                            InvocationExpression(
-                                expression: expr_l !,
-                                argumentList:
-                                    NinaCompilerUtil.transfer_list2args(list_r, block)
+                            new NinaASTBinaryExpression(
+                                _type: NinaOperatorType.BraL,
+                                _expr_l: expr_l,
+                                _expr_r: list_r
+                            );
+                    }
+                    else if (expr_r != null) {
+                        return
+                            new NinaASTBinaryExpression(
+                                _type: NinaOperatorType.BraL,
+                                _expr_l: expr_l,
+                                _expr_r: new NinaASTListExpression(
+                                    new List<ANinaASTExpression>() {
+                                        expr_r
+                                    }
+                                )
                             );
                     }
                     else {
-                        return
-                            InvocationExpression(
-                                expression: expr_l !,
-                                argumentList:
-                                    NinaCompilerUtil.transfer_list2args(expr_r !, block)
-                            );
+                        NinaError.error(
+                            "invalid right-hand expression " +
+                            "for function calling operator.",
+                            194021,
+                            new NinaErrorPosition(block.file, block.line, block.col));
                     }
                 }
-                else if (list_l != null || list_r != null) {
+                else if (expr_l == null || expr_r == null) {
                     NinaError.error(
-                        "unexpected list expression " +
+                        "unexpected expression " +
                         "for the specific operator.",
                         249439,
                         new NinaErrorPosition(block.file, block.line, block.col));
                 }
                 else if (block.val_op == NinaOperatorType.MBraL) {
                     return
-                        ElementAccessExpression(
-                            expression: expr_l !,
-                            argumentList: BracketedArgumentList(
-                                new SeparatedSyntaxList<ArgumentSyntax>()
-                                    .Add(Argument(expr_r !))
-                            )
+                        new NinaASTBinaryExpression(
+                            _type: NinaOperatorType.MBraL,
+                            _expr_l: expr_l,
+                            _expr_r: expr_r
                         );
                 }
                 else if (block.val_op == NinaOperatorType.Dot) {
-                    IdentifierNameSyntax? id = expr_r as IdentifierNameSyntax;
+                    NinaASTIdentifierExpression? id
+                        = expr_r as NinaASTIdentifierExpression;
                     if (id == null) {
                         NinaError.error(
                             "invalid right-hand expression " +
@@ -268,70 +280,59 @@ class NinaExprTree {
                             new NinaErrorPosition(block.file, block.line, block.col));
                     }
                     else {
-                        SeparatedSyntaxList<ArgumentSyntax> slist
-                            = new SeparatedSyntaxList<ArgumentSyntax>()
-                                .Add(
-                                    Argument(
-                                        LiteralExpression(
-                                            kind: SyntaxKind.StringLiteralExpression,
-                                            token: Literal(
-                                                NinaCompilerUtil.unformat_identifier(
-                                                    id.Identifier.Text
-                                                )
-                                            )
-                                        )
-                                    )
-                                );
                         return
-                            ElementAccessExpression(
-                                expression: expr_l !,
-                                argumentList: BracketedArgumentList(
-                                    slist
+                            new NinaASTBinaryExpression(
+                                _type: NinaOperatorType.BraL,
+                                _expr_l: expr_l,
+                                _expr_r: new NinaASTLiteralExpression(
+                                    id.name
                                 )
                             );
                     }
                 }
                 else if (block.val_op == NinaOperatorType.Equ) {
                     return
-                        AssignmentExpression(
-                            kind: SyntaxKind.SimpleAssignmentExpression,
-                            left: expr_l !,
-                            right: expr_r !
+                        new NinaASTBinaryExpression(
+                            _type: NinaOperatorType.Equ,
+                            _expr_l: expr_l,
+                            _expr_r: expr_r
                         );
                 }
                 else if (block.val_op == NinaOperatorType.LOr
                         || block.val_op == NinaOperatorType.LAnd) {
                     return
-                        BinaryExpression(
-                            kind: block.val_op == NinaOperatorType.LOr
-                                ? SyntaxKind.LogicalOrExpression
-                                : SyntaxKind.LogicalAndExpression,
-                            left: expr_l !,
-                            right: expr_r !
+                        new NinaASTBinaryExpression(
+                            _type: (NinaOperatorType) block.val_op !,
+                            _expr_l: expr_l,
+                            _expr_r: expr_r
                         );
                 }
                 else {
                     return
-                        InvocationExpression(
-                            expression:
-                                IdentifierName(
+                        new NinaASTBinaryExpression(
+                            _type: NinaOperatorType.BraL,
+                            _expr_l:
+                                new NinaASTIdentifierExpression(
                                     NinaConstsProviderUtil.CSHARP_NINAAPIUTIL_PREFIX
                                         + "op"
                                         + block.val_op.ToString()
                                 ),
-                            argumentList: ArgumentList(
-                                new SeparatedSyntaxList<ArgumentSyntax>()
-                                    .Add(Argument(expr_l !))
-                                    .Add(Argument(expr_r !))
+                            _expr_r: new NinaASTListExpression(
+                                new List<ANinaASTExpression>() {
+                                    expr_l, expr_r
+                                }
                             )
                         );
                 }
             }
             else {
-                CSharpSyntaxNode node = r!.compile(false);
-                ExpressionSyntax? expr = node as ExpressionSyntax;
-                ArgumentListSyntax? list = node as ArgumentListSyntax;
-                BlockSyntax? compiledBlock = node as BlockSyntax;
+                ANinaASTExpression node = r!.compile(false);
+                NinaASTBinaryExpression? bexpr = node as NinaASTBinaryExpression;
+                NinaASTUnaryExpression? uexpr = node as NinaASTUnaryExpression;
+                ANinaASTExpression? expr
+                    = bexpr != null ? bexpr : uexpr;
+                NinaASTListExpression? list = node as NinaASTListExpression;
+                NinaASTBlockExpression? compiledBlock = node as NinaASTBlockExpression;
                 
                 if (block.val_op == NinaOperatorType.Object) {
                     if (compiledBlock == null) {
@@ -341,29 +342,34 @@ class NinaExprTree {
                             301529,
                             new NinaErrorPosition(block.file, block.line, block.col));
                     }
-                    return ObjectCreationExpression(
-                        type: IdentifierName("object"),
-                        argumentList: ArgumentList(),
-                        initializer:
+                    return
+                        new NinaASTObjectExpression(
                             NinaCompilerUtil.transfer_block2init(compiledBlock !, block)
-                    );
+                        );
                 }
                 else if (block.val_op == NinaOperatorType.Array) {
                     if (list != null) {
-                        return ObjectCreationExpression(
-                            type: IdentifierName("array"),
-                            argumentList: ArgumentList(),
-                            initializer:
-                                NinaCompilerUtil.transfer_list2init(list, block)
-                        );
+                        return
+                            new NinaASTObjectExpression(
+                                list !
+                            );
+                    }
+                    else if (expr != null) {
+                        return
+                            new NinaASTObjectExpression(
+                                new NinaASTListExpression(
+                                    new List<ANinaASTExpression>() {
+                                        expr
+                                    }
+                                )
+                            );
                     }
                     else {
-                        return ObjectCreationExpression(
-                            type: IdentifierName("array"),
-                            argumentList: ArgumentList(),
-                            initializer:
-                                NinaCompilerUtil.transfer_list2init(expr !, block)
-                        );
+                        NinaError.error(
+                            "invalid right-hand expression " +
+                            "for array creation operator.",
+                            103928,
+                            new NinaErrorPosition(block.file, block.line, block.col));
                     }
                 }
                 else if (expr == null) {
@@ -374,24 +380,23 @@ class NinaExprTree {
                         new NinaErrorPosition(block.file, block.line, block.col));
                 }
                 else if (block.val_op == NinaOperatorType.At) {
-                    return node.WithAdditionalAnnotations(
-                        new SyntaxAnnotation(
-                            NinaConstsProviderUtil.CSHARP_ANNO_SPECIALARG
-                        )
-                    );
+                    node.add_annos(NinaConstsProviderUtil.CSHARP_ANNO_SPECIALARG);
+                    return node;
                 }
                 else {
                     return
-                        InvocationExpression(
-                            expression:
-                                IdentifierName(
+                        new NinaASTBinaryExpression(
+                            _type: NinaOperatorType.BraL,
+                            _expr_l:
+                                new NinaASTIdentifierExpression(
                                     NinaConstsProviderUtil.CSHARP_NINAAPIUTIL_PREFIX
                                         + "op"
                                         + block.val_op.ToString()
                                 ),
-                            argumentList: ArgumentList(
-                                new SeparatedSyntaxList<ArgumentSyntax>()
-                                    .Add(Argument(expr !))
+                            _expr_r: new NinaASTListExpression(
+                                new List<ANinaASTExpression>() {
+                                    expr
+                                }
                             )
                         );
                 }
@@ -401,6 +406,6 @@ class NinaExprTree {
             NinaError.error("unexpected error.", 214128);
         }
 
-        return LiteralExpression(SyntaxKind.NullLiteralExpression);
+        return new NinaASTLiteralExpression();
     }
 }

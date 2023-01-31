@@ -1,8 +1,3 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-
 namespace Nina;
 
 static class NinaConstsProviderUtil {
@@ -149,31 +144,6 @@ static class NinaCodeBlockUtil {
         (int) NinaOperatorType.Array,
         (int) NinaOperatorType.At
     };
-    public static Dictionary<int, SyntaxKind> operators_csharp
-            = new Dictionary<int, SyntaxKind> {
-        [(int) NinaOperatorType.LOr] = SyntaxKind.LogicalOrExpression,
-        [(int) NinaOperatorType.LAnd] = SyntaxKind.LogicalAndExpression,
-        [(int) NinaOperatorType.Or] = SyntaxKind.BitwiseOrExpression,
-        [(int) NinaOperatorType.XOr] = SyntaxKind.ExclusiveOrExpression,
-        [(int) NinaOperatorType.And] = SyntaxKind.BitwiseAndExpression,
-        [(int) NinaOperatorType.LEqu] = SyntaxKind.EqualsExpression,
-        [(int) NinaOperatorType.LNEqu] = SyntaxKind.NotEqualsExpression,
-        [(int) NinaOperatorType.More] = SyntaxKind.GreaterThanExpression,
-        [(int) NinaOperatorType.Less] = SyntaxKind.LessThanExpression,
-        [(int) NinaOperatorType.MoreE] = SyntaxKind.GreaterThanOrEqualExpression,
-        [(int) NinaOperatorType.LessE] = SyntaxKind.LessThanOrEqualExpression,
-        [(int) NinaOperatorType.SftL] = SyntaxKind.LeftShiftExpression,
-        [(int) NinaOperatorType.SftR] = SyntaxKind.RightShiftExpression,
-        [(int) NinaOperatorType.Add] = SyntaxKind.AddExpression,
-        [(int) NinaOperatorType.Sub] = SyntaxKind.SubtractExpression,
-        [(int) NinaOperatorType.Mut] = SyntaxKind.MultiplyExpression,
-        [(int) NinaOperatorType.Div] = SyntaxKind.DivideExpression,
-        [(int) NinaOperatorType.Rem] = SyntaxKind.ModuloExpression,
-        [(int) NinaOperatorType.Not] = SyntaxKind.BitwiseNotExpression,
-        [(int) NinaOperatorType.Pos] = SyntaxKind.UnaryPlusExpression,
-        [(int) NinaOperatorType.Neg] = SyntaxKind.UnaryMinusExpression,
-        [(int) NinaOperatorType.LNot] = SyntaxKind.LogicalNotExpression
-    };
     public static int operatorsRank_unary = operatorsRank[(int) NinaOperatorType.Pos];
     public static bool supposeSymbol(char _ch, out NinaSymbolType _out) {
         return symbols.TryGetValue(_ch, out _out);
@@ -191,11 +161,6 @@ static class NinaCodeBlockUtil {
         bool ok = operators_ch.TryGetValue(_ch, out _out);
         if (ok) operatorsRank.TryGetValue((int) _out, out _lv);
         else operatorsRank.TryGetValue((int) NinaOperatorType.None, out _lv);
-        return ok;
-    }
-    public static bool supposeOperator_csharp(int _id, out SyntaxKind _out) {
-        bool ok = operators_csharp.TryGetValue(_id, out _out);
-        if (! ok) _out = SyntaxKind.None;
         return ok;
     }
     public static bool isVoid(char _ch) {
@@ -231,212 +196,93 @@ static class NinaCompilerUtil {
             return _id.Remove(0, NinaConstsProviderUtil.CSHARP_ID_PREFIX.Length);
         return _id;
     }
-    public static ArgumentListSyntax transfer_list2args(
-            ArgumentListSyntax _list, NinaCodeBlock _block) {
-        SeparatedSyntaxList<ArgumentSyntax> list = _list.Arguments;
-        SeparatedSyntaxList<ArgumentSyntax> ret
-            = new SeparatedSyntaxList<ArgumentSyntax>();
-        for (int i = 0; i < list.Count; ++ i) {
-            ExpressionSyntax v = list[i].Expression;
-            ret = ret.Add(Argument(v));
-        }
-        return ArgumentList(ret);
-    }
-    public static ArgumentListSyntax transfer_list2args(
-            ExpressionSyntax _expr, NinaCodeBlock _block) {
-        return transfer_list2args(ArgumentList(
-            new SeparatedSyntaxList<ArgumentSyntax>()
-                .Add(Argument(_expr))
-        ), _block);
-    }
-    public static ParameterListSyntax transfer_list2params(
-            ArgumentListSyntax _list, NinaCodeBlock _block) {
-        SeparatedSyntaxList<ArgumentSyntax> list = _list.Arguments;
-        SeparatedSyntaxList<ParameterSyntax> ret
-            = new SeparatedSyntaxList<ParameterSyntax>();
-        bool isComfortable = false;
-        for (int i = 0; i < list.Count; ++ i) {
-            ExpressionSyntax v = list[i].Expression;
-            AssignmentExpressionSyntax? v_assign
-                = v as AssignmentExpressionSyntax;
-            if (v_assign == null && isComfortable) {
-                NinaError.error("invalid param initialization expression.",
-                    152183,
-                    new NinaErrorPosition(_block.file, _block.line,
-                        _block.col));
-            }
-            else if (v_assign != null) {
-                IdentifierNameSyntax? key
-                    = v_assign.Left as IdentifierNameSyntax;
-                ExpressionSyntax val = v_assign.Right;
-                if (key == null) {
-                    NinaError.error("invalid param initialization expression.",
-                        301634,
-                        new NinaErrorPosition(_block.file, _block.line,
-                            _block.col));
-                }
-                ret = ret.Add(
-                    Parameter(key!.Identifier)
-                    .WithType(PredefinedType(Token(SyntaxKind.ObjectKeyword)))
-                    .WithDefault(
-                        EqualsValueClause(val)
-                    )
-                );
-                isComfortable = true;
-            }
-            else {
-                IdentifierNameSyntax? key = v as IdentifierNameSyntax;
-                if (key == null) {
-                    NinaError.error("invalid parameter initialization expression.",
-                        631130,
-                        new NinaErrorPosition(_block.file, _block.line,
-                            _block.col));
-                }
-                ret = ret.Add(
-                    Parameter(key!.Identifier)
-                        .WithType(PredefinedType(Token(SyntaxKind.ObjectKeyword)))
-                );
-            }
-        }
-        return ParameterList(ret);
-    }
-    public static ParameterListSyntax transfer_list2params(
-            ExpressionSyntax _expr, NinaCodeBlock _block) {
-        return transfer_list2params(
-            ArgumentList(
-                new SeparatedSyntaxList<ArgumentSyntax>()
-                    .Add(Argument(_expr))
-            ),
-            _block
-        );
-    }
-    public static InitializerExpressionSyntax transfer_list2init(
-            ArgumentListSyntax _list, NinaCodeBlock _block) {
-        SeparatedSyntaxList<ArgumentSyntax> list = _list.Arguments;
-        SeparatedSyntaxList<ExpressionSyntax> ret
-            = new SeparatedSyntaxList<ExpressionSyntax>();
-        int currI = - 1;
-        for (int i = 0; i < list.Count; ++ i) {
-            ExpressionSyntax v = list[i].Expression;
-            LiteralExpressionSyntax key
-                = LiteralExpression(
-                    kind: SyntaxKind.NumericLiteralExpression,
-                    token: Literal((double) (++ currI))
-                );
-            ExpressionSyntax val = v;
-            ret = ret.Add(
-                AssignmentExpression(
-                    kind: SyntaxKind.SimpleAssignmentExpression,
-                    left: ImplicitElementAccess(
-                        BracketedArgumentList(
-                            new SeparatedSyntaxList<ArgumentSyntax>()
-                                .Add(Argument(key))
-                        )
-                    ),
-                    right: val
-                )
-            );
-        }
-        return InitializerExpression(
-            kind: SyntaxKind.ObjectInitializerExpression,
-            expressions: ret
-        );
-    }
-    public static InitializerExpressionSyntax transfer_list2init(
-            ExpressionSyntax _expr, NinaCodeBlock _block) {
-        return transfer_list2init(
-            ArgumentList(
-                new SeparatedSyntaxList<ArgumentSyntax>()
-                    .Add(Argument(_expr))
-            ),
-            _block
-        );
-    }
-    public static InitializerExpressionSyntax transfer_block2init(
-            BlockSyntax _block, NinaCodeBlock _eblock) {
-        SeparatedSyntaxList<ExpressionSyntax> list
-            = new SeparatedSyntaxList<ExpressionSyntax>();
-        SyntaxList<StatementSyntax> stms = _block.Statements;
-
-        for (int i = 0; i < stms.Count; ++ i) {
-            StatementSyntax v = stms[i];
-            if (v is LocalDeclarationStatementSyntax vars) {
-                SeparatedSyntaxList<VariableDeclaratorSyntax> vs
-                    = vars.Declaration.Variables;
-                for (int j = 0; j < vs.Count; ++ j) {
-                    VariableDeclaratorSyntax w = vs[j];
-                    list = list.Add(
-                        AssignmentExpression(
-                            kind: SyntaxKind.SimpleAssignmentExpression,
-                            left: ImplicitElementAccess(
-                                argumentList: BracketedArgumentList(
-                                    new SeparatedSyntaxList<ArgumentSyntax>()
-                                        .Add(
-                                            Argument(
-                                                LiteralExpression(
-                                                    kind: SyntaxKind.StringLiteralExpression,
-                                                    token: Literal(
-                                                        NinaCompilerUtil.unformat_identifier(
-                                                            w.Identifier.ValueText
-                                                        )
-                                                    )
-                                                )
-                                            )
-                                        )
-                                )
-                            )
-                            .WithAdditionalAnnotations(
-                                vars.IsConst
-                                    ? new SyntaxAnnotation(
-                                        NinaConstsProviderUtil.CSHARP_ANNO_CONST
-                                    )
-                                    : new SyntaxAnnotation()
-                            ),
-                            right: w.Initializer != null
-                                ? w.Initializer.Value
-                                : LiteralExpression(
-                                    SyntaxKind.NullLiteralExpression
-                                )
-                        )
-                    );
-                }
-            }
-            else if (v is ReturnStatementSyntax && i == stms.Count - 1) {}
-            else {
-                NinaError.error(
-                    "unexpected syntax in the member initialization block.",
-                    894872,
-                    new NinaErrorPosition(_eblock.file, _eblock.line, _eblock.col));
-            }
-        }
-
-        return InitializerExpression(
-            kind: SyntaxKind.ObjectInitializerExpression,
-            expressions: list
-        );
-    }
-    public static BlockSyntax resolve_elses(
-            List<(ExpressionSyntax, BlockSyntax)> _list) {
-        IfStatementSyntax? ret = null;
+    public static NinaASTBlockExpression resolve_elses(
+            List<(ANinaASTExpression, NinaASTBlockExpression)> _list) {
+        NinaASTIfStatement? ret = null;
         for (int i = _list.Count - 1; i >= 0; -- i) {
             var (cond, block) = _list[i];
-            IfStatementSyntax nif = IfStatement(
-                condition: cond,
-                statement: block
+            NinaASTIfStatement nif = new NinaASTIfStatement(
+                _expr: cond,
+                _block: block
             );
-            if (ret == null) {
-                ret = nif;
+            if (ret != null) {
+                nif.block_else = new NinaASTBlockExpression(
+                    new List<ANinaASTStatement>() {
+                        ret
+                    }
+                );
+            }
+            ret = nif;
+        }
+        return ret != null
+            ? new NinaASTBlockExpression(
+                new List<ANinaASTStatement>() {
+                    ret
+                }
+            )
+            : new NinaASTBlockExpression();
+    }
+    public static NinaASTSuperListExpression transfer_list2params(
+            NinaASTListExpression _list, NinaCodeBlock _posBlock) {
+        List<(string, ANinaASTExpression?)> ret
+            = new List<(string, ANinaASTExpression?)>();
+        List<ANinaASTExpression> list = _list.list;
+        for (int i = 0; i < list.Count; ++ i) {
+            ANinaASTExpression v = list[i];
+            if (v.type == NinaOperatorType.Equ
+                    && v is NinaASTBinaryExpression binary
+                    && binary.expr_l is NinaASTIdentifierExpression id) {
+                ret.Add(
+                    (id.name, binary.expr_r)
+                );
+            }
+            else if (v is NinaASTIdentifierExpression id2) {
+                ret.Add(
+                    (id2.name, null)
+                );
             }
             else {
-                ret = nif.WithElse(
-                    ElseClause(
-                        elseKeyword: Token(SyntaxKind.ElseKeyword),
-                        statement: Block(ret)
-                    )
+                NinaError.error(
+                    "unexpected expression "
+                    + "in the parameter list expression.",
+                    102931,
+                    new NinaErrorPosition(_posBlock.file,
+                        _posBlock.line, _posBlock.col)
                 );
             }
         }
-        return ret != null ? Block(ret) : Block();
+        return new NinaASTSuperListExpression(
+            ret
+        );
+    }
+    public static NinaASTSuperListExpression transfer_list2params(
+            ANinaASTExpression _expr, NinaCodeBlock _posBlock) {
+        return transfer_list2params(
+            new NinaASTListExpression(
+                new List<ANinaASTExpression>() {
+                    _expr
+                }
+            ),
+            _posBlock
+        );
+    }
+    public static NinaASTBlockExpression transfer_block2init(
+            NinaASTBlockExpression _block, NinaCodeBlock _posBlock) {
+        List<ANinaASTStatement> stms = _block.stms;
+        for (int i = 0; i < stms.Count; ++ i) {
+            ANinaASTStatement v = stms[i];
+            if (v is NinaASTVarStatement vars) {}
+            else {
+                NinaError.error(
+                    "unexpected expression "
+                    + "in the object block expression.",
+                    799124,
+                    new NinaErrorPosition(_posBlock.file,
+                        _posBlock.line, _posBlock.col)
+                );
+            }
+        }
+        return _block;
     }
     public static Dictionary<T1, T2>
             merge_dictionaries<T1, T2>(params Dictionary<T1, T2>[] _arr)
