@@ -1048,14 +1048,13 @@ static class NinaILCompiler {
         }
     }
     public static Type? compile(NinaASTBlockExpression _block) {
-        AssemblyName an = new AssemblyName("NinaRuntime");
         AssemblyBuilder ab
             = AssemblyBuilder.DefineDynamicAssembly(
-                name: an,
+                name: new AssemblyName("NinaRuntime"),
                 access: AssemblyBuilderAccess.RunAndCollect
             );
         ModuleBuilder mb =
-            ab.DefineDynamicModule(an.Name !);
+            ab.DefineDynamicModule("NinaRuntimeModule");
         TypeBuilder tb
             = mb.DefineType(
                 name: "NinaEntry",
