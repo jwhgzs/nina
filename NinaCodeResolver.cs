@@ -50,7 +50,7 @@ static class NinaCodeResolver {
                     buf += quote;
                     ret.Add(
                         new NinaCodeBlock(
-                            _file, currLine, currCol,
+                            _file, (int) bufLine !, (int) bufCol !,
                             buf, NinaCodeBlockType.String,
                             _assert_str: buf_str
                         )
@@ -83,7 +83,6 @@ static class NinaCodeResolver {
                         && (
                             op == NinaOperatorType.Add
                             || op == NinaOperatorType.Sub
-                            || op == NinaOperatorType.Dot
                         )
                         && (
                             buf.Length == 0 && ret.Count > 0

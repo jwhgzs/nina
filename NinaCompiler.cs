@@ -409,7 +409,8 @@ static class NinaCompiler {
                                 buf_elses.Add(
                                     (
                                         new NinaASTIdentifierExpression(
-                                            "true",
+                                            NinaConstsProviderUtil.NINA_ID_PREFIX
+                                                + "true",
                                             tmpPos
                                         ),
                                         body
@@ -635,21 +636,6 @@ static class NinaCompiler {
             _blocks: _blocks,
             _i: ref i
         );
-        Type? entryTp = NinaILCompiler.compile(block);
-        MethodInfo? main = entryTp != null
-            ? entryTp.GetMethod("Main")
-            : null;
-        if (main == null) {
-            NinaError.error("unexpected error.", 200164);
-        }
-        else {
-            try {
-                main.Invoke(null, null);
-            }
-            catch (Exception ex) {
-                NinaError.error(
-                    "unexpected error: \n" + ex.ToString(), 509470);
-            }
-        }
+        NinaILCompiler.run(block);
     }
 }

@@ -8,6 +8,11 @@ abstract class ANinaAST {
     }
 }
 
+class NinaASTPlaceholder : ANinaAST {
+    public NinaASTPlaceholder(NinaErrorPosition _pos)
+            : base(_pos) {}
+}
+
 abstract class ANinaASTExpression : ANinaAST {
     public NinaOperatorType? type;
     public ANinaASTExpression(NinaErrorPosition _pos)

@@ -1,10 +1,13 @@
+using System.Reflection;
+
 namespace Nina;
 
 static class NinaConstsProviderUtil {
-    public const string CSHARP_ID_PREFIX = "NinaGlobal__";
+    public const string NINA_ID_PREFIX = "NinaGlobal__";
+    public const string NINA_ANNO_SPECIALARG = "NINA_ANNO_SPECIALARG";
     public const string CSHARP_NINAAPI_PREFIX = "NinaAPI__";
     public const string CSHARP_NINAAPIUTIL_PREFIX = "NinaAPIUtil__";
-    public const string CSHARP_ANNO_SPECIALARG = "NINA_ANNO_SPECIALARG";
+    public const string IL_ENTRYCLASS_ID = "NinaEntry";
     public const string IL_BUILTIN_ID_PREFIX = "NINA_BUILTIN_";
     public const string IL_CLOSURECLASS_ID_PREFIX = "NINA_CLOSURECLASS_";
     public const string IL_CLOSURECLASS_FIELD_PREFIX = "NINA_CLOSURECLASS_FIELD_";
@@ -188,11 +191,11 @@ static class NinaCompilerUtil {
     public static string format_identifier(string _id) {
         if (NinaCodeBlockUtil.specialIdentifiers.Contains(_id))
             return _id;
-        return NinaConstsProviderUtil.CSHARP_ID_PREFIX + _id;
+        return NinaConstsProviderUtil.NINA_ID_PREFIX + _id;
     }
     public static string unformat_identifier(string _id) {
-        if (_id.StartsWith(NinaConstsProviderUtil.CSHARP_ID_PREFIX))
-            return _id.Remove(0, NinaConstsProviderUtil.CSHARP_ID_PREFIX.Length);
+        if (_id.StartsWith(NinaConstsProviderUtil.NINA_ID_PREFIX))
+            return _id.Remove(0, NinaConstsProviderUtil.NINA_ID_PREFIX.Length);
         return _id;
     }
     public static NinaASTBlockExpression? resolve_elses(
@@ -323,5 +326,11 @@ static class NinaCompilerUtil {
             }
         }
         return ret;
+    }
+    public static string snapshot_method(MethodBase _mtd) {
+        return
+            _mtd.DeclaringType!.FullName !
+            + "."
+            + _mtd.Name;
     }
 }

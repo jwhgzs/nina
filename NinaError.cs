@@ -13,12 +13,23 @@ public struct NinaErrorPosition {
 public static class NinaError {
     public static void error(string _msg, int _uniqueCode, NinaErrorPosition? _pos = null) {
         string err = "";
-        err += "[Nina Error #" + _uniqueCode + "] ";
-        if (_pos != null)
+        err += "[Nina Error";
+        if (_uniqueCode >= 0)
+            err += " #" + _uniqueCode;
+        err += "] ";
+        if (_pos != null) {
+            int linei = _pos.Value.line + 1;
+            int coli = _pos.Value.col + 1;
+            string line = linei >= 0 ? linei.ToString() : "unknown";
+            string col = coli >= 0 ? coli.ToString() : "unknown";
             err += "at " + _pos.Value.file + " ("
-                + (_pos.Value.line + 1) + ", " + (_pos.Value.col + 1) + ")";
+                + line + ", " + col + ")";
+        }
         err += "\n" + _msg;
         Console.WriteLine(err);
         Environment.Exit(- 1);
+    }
+    public static void hot(string _msg, int _uniqueCode) {
+        throw new Exception(_msg + " (#" + _uniqueCode + ")");
     }
 }

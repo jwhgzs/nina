@@ -396,7 +396,7 @@ class NinaExprTree {
                         new NinaErrorPosition(block.file, block.line, block.col));
                 }
                 else if (block.val_op == NinaOperatorType.At) {
-                    node.annos.Add(NinaConstsProviderUtil.CSHARP_ANNO_SPECIALARG);
+                    node.annos.Add(NinaConstsProviderUtil.NINA_ANNO_SPECIALARG);
                     return node;
                 }
                 else {
