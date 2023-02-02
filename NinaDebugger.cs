@@ -40,22 +40,10 @@ static class NinaDebugger {
             ++ i;
         }
     }
-    private static NinaImportsILReader ILReader
-        = new NinaImportsILReader();
-    public static string parse_ILCode(byte[] _arr, ref int _i) {
+    public static void read_ILCode(byte[] _arr, ref int _i) {
         byte b = _arr[_i ++];
-        if (b != 0xfe) {
-            return ILReader.SingleByteOpCodes[b].ToString() !;
+        if (b == 0xfe) {
+            ++ _i;
         }
-        else {
-            return 
-                ILReader.MultiByteOpCodes[
-                    (int) _arr[_i ++]
-                ]
-                .ToString() !;
-        }
-    }
-    static NinaDebugger() {
-        ILReader.LoadOpCodes();
     }
 }

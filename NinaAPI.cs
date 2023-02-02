@@ -255,7 +255,7 @@ public static class NinaAPIUtil {
                 ss = nss;
                 offset = v.GetILOffset();
                 byte[] a = nmtd.GetMethodBody()!.GetILAsByteArray()!;
-                NinaDebugger.parse_ILCode(a, ref offset);
+                NinaDebugger.read_ILCode(a, ref offset);
                 break;
             }
         }
