@@ -97,56 +97,61 @@ static class NinaCodeBlockUtil {
         ['<'] = NinaOperatorType.Less,
         ['@'] = NinaOperatorType.At
     };
-    public static Dictionary<int, int> operatorsRank
-            = new Dictionary<int, int> {
-        [(int) NinaOperatorType.None] = 0,
-        [(int) NinaOperatorType.Com] = 1,
-        [(int) NinaOperatorType.Equ] = 2,
-        [(int) NinaOperatorType.LOr] = 3,
-        [(int) NinaOperatorType.LAnd] = 4,
-        [(int) NinaOperatorType.Or] = 5,
-        [(int) NinaOperatorType.XOr] = 6,
-        [(int) NinaOperatorType.And] = 7,
-        [(int) NinaOperatorType.LEqu] = 8,
-        [(int) NinaOperatorType.LNEqu] = 8,
-        [(int) NinaOperatorType.More] = 8,
-        [(int) NinaOperatorType.Less] = 8,
-        [(int) NinaOperatorType.MoreE] = 8,
-        [(int) NinaOperatorType.LessE] = 8,
-        [(int) NinaOperatorType.SftL] = 9,
-        [(int) NinaOperatorType.SftR] = 9,
-        [(int) NinaOperatorType.Add] = 10,
-        [(int) NinaOperatorType.Sub] = 11,
-        [(int) NinaOperatorType.Mut] = 12,
-        [(int) NinaOperatorType.Div] = 13,
-        [(int) NinaOperatorType.Rem] = 14,
-        [(int) NinaOperatorType.Pow] = 15,
-        [(int) NinaOperatorType.Arr] = 16,
-        [(int) NinaOperatorType.Not] = 17,
-        [(int) NinaOperatorType.Pos] = 17,
-        [(int) NinaOperatorType.Neg] = 17,
-        [(int) NinaOperatorType.LNot] = 17,
-        [(int) NinaOperatorType.Typeof] = 17,
-        [(int) NinaOperatorType.Object] = 17,
-        [(int) NinaOperatorType.Array] = 17,
-        [(int) NinaOperatorType.At] = 17,
-        [(int) NinaOperatorType.BraL] = 18,
-        [(int) NinaOperatorType.BraR] = 18,
-        [(int) NinaOperatorType.MBraL] = 18,
-        [(int) NinaOperatorType.MBraR] = 18,
-        [(int) NinaOperatorType.Dot] = 18
+    public static Dictionary<NinaOperatorType, int> operatorsRank
+            = new Dictionary<NinaOperatorType, int> {
+        [NinaOperatorType.None] = 0,
+        [NinaOperatorType.Com] = 1,
+        [NinaOperatorType.Equ] = 2,
+        [NinaOperatorType.LOr] = 3,
+        [NinaOperatorType.LAnd] = 4,
+        [NinaOperatorType.Or] = 5,
+        [NinaOperatorType.XOr] = 6,
+        [NinaOperatorType.And] = 7,
+        [NinaOperatorType.LEqu] = 8,
+        [NinaOperatorType.LNEqu] = 8,
+        [NinaOperatorType.More] = 8,
+        [NinaOperatorType.Less] = 8,
+        [NinaOperatorType.MoreE] = 8,
+        [NinaOperatorType.LessE] = 8,
+        [NinaOperatorType.SftL] = 9,
+        [NinaOperatorType.SftR] = 9,
+        [NinaOperatorType.Add] = 10,
+        [NinaOperatorType.Sub] = 11,
+        [NinaOperatorType.Mut] = 12,
+        [NinaOperatorType.Div] = 13,
+        [NinaOperatorType.Rem] = 14,
+        [NinaOperatorType.Pow] = 15,
+        [NinaOperatorType.Arr] = 16,
+        [NinaOperatorType.Not] = 17,
+        [NinaOperatorType.Pos] = 17,
+        [NinaOperatorType.Neg] = 17,
+        [NinaOperatorType.LNot] = 17,
+        [NinaOperatorType.Typeof] = 17,
+        [NinaOperatorType.Object] = 17,
+        [NinaOperatorType.Array] = 17,
+        [NinaOperatorType.At] = 17,
+        [NinaOperatorType.BraL] = 18,
+        [NinaOperatorType.BraR] = 18,
+        [NinaOperatorType.MBraL] = 18,
+        [NinaOperatorType.MBraR] = 18,
+        [NinaOperatorType.Dot] = 18
     };
-    public static List<int> operators_unarys = new List<int>() {
-        (int) NinaOperatorType.Not,
-        (int) NinaOperatorType.Pos,
-        (int) NinaOperatorType.Neg,
-        (int) NinaOperatorType.LNot,
-        (int) NinaOperatorType.Typeof,
-        (int) NinaOperatorType.Object,
-        (int) NinaOperatorType.Array,
-        (int) NinaOperatorType.At
-    };
-    public static int operatorsRank_unary = operatorsRank[(int) NinaOperatorType.Pos];
+    public static List<NinaOperatorType> operators_unarys
+            = new List<NinaOperatorType>() {
+                NinaOperatorType.Not,
+                NinaOperatorType.Pos,
+                NinaOperatorType.Neg,
+                NinaOperatorType.LNot,
+                NinaOperatorType.Typeof,
+                NinaOperatorType.Object,
+                NinaOperatorType.Array,
+                NinaOperatorType.At
+            };
+    public static Dictionary<NinaOperatorType, NinaOperatorType> operators_vagues
+            = new Dictionary<NinaOperatorType, NinaOperatorType>() {
+                [NinaOperatorType.Add] = NinaOperatorType.Pos,
+                [NinaOperatorType.Sub] = NinaOperatorType.Neg
+            };
     public static bool supposeSymbol(char _ch, out NinaSymbolType _out) {
         return symbols.TryGetValue(_ch, out _out);
     }
@@ -155,13 +160,13 @@ static class NinaCodeBlockUtil {
     }
     public static bool supposeOperator(string _code, out NinaOperatorType _out, out int _lv) {
         bool ok = operators.TryGetValue(_code, out _out);
-        if (ok) operatorsRank.TryGetValue((int) _out, out _lv);
+        if (ok) operatorsRank.TryGetValue(_out, out _lv);
         else operatorsRank.TryGetValue((int) NinaOperatorType.None, out _lv);
         return ok;
     }
     public static bool supposeOperator(char _ch, out NinaOperatorType _out, out int _lv) {
         bool ok = operators_ch.TryGetValue(_ch, out _out);
-        if (ok) operatorsRank.TryGetValue((int) _out, out _lv);
+        if (ok) operatorsRank.TryGetValue(_out, out _lv);
         else operatorsRank.TryGetValue((int) NinaOperatorType.None, out _lv);
         return ok;
     }

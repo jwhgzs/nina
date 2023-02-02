@@ -241,7 +241,6 @@ public static class NinaAPIUtil {
     public static void error_ex(
             Exception _ex,
             Dictionary<string, List<(int, NinaErrorPosition)>> _pos_table) {
-        // Console.WriteLine(_ex);
         StackTrace trace
             = new StackTrace(_ex, true);
         StackFrame[] frames = trace.GetFrames();
@@ -256,9 +255,7 @@ public static class NinaAPIUtil {
                 ss = nss;
                 offset = v.GetILOffset();
                 byte[] a = nmtd.GetMethodBody()!.GetILAsByteArray()!;
-                // Console.WriteLine(NinaDebugger.parse_ILCode(a, ref offset));
-                // Console.WriteLine(offset);
-                // Console.WriteLine(nss);
+                NinaDebugger.parse_ILCode(a, ref offset);
                 break;
             }
         }
@@ -270,13 +267,13 @@ public static class NinaAPIUtil {
         for (int i = 0; i < table.Count; ++ i) {
             var (os, pos) = table.ElementAt(i);
             if (os >= offset) {
-                NinaError.error(_ex.Message, - 1, pos);
+                NinaError.error(_ex.Message, - 1, pos, true);
             }
         }
         if (table.Count > 0)
-            NinaError.error(_ex.Message, - 1, table.Last().Item2);
+            NinaError.error(_ex.Message, - 1, table.Last().Item2, true);
         else
-            NinaError.error(_ex.Message, - 1);
+            NinaError.error(_ex.Message, - 1, null, true);
     }
 }
 

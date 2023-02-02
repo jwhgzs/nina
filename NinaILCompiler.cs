@@ -10,10 +10,6 @@ static class NinaILCompiler {
             string _ss, ILGenerator _g, ANinaAST _node) {
         if (! _pos_table.ContainsKey(_ss))
             _pos_table[_ss] = new List<(int, NinaErrorPosition)>();
-        // Console.WriteLine(
-        //     _ss + " " + _g.ILOffset + " " +
-        //     _node.pos.file + " (" + _node.pos.line + ", " + _node.pos.col + ")"
-        // );
         _pos_table[_ss].Add((_g.ILOffset, _node.pos));
     }
     public static ConstructorInfo compile_innerCtor(string _type) {

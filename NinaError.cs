@@ -11,7 +11,8 @@ public struct NinaErrorPosition {
 }
 
 public static class NinaError {
-    public static void error(string _msg, int _uniqueCode, NinaErrorPosition? _pos = null) {
+    public static void error(string _msg, int _uniqueCode, NinaErrorPosition? _pos = null,
+            bool _vague = false) {
         string err = "";
         err += "[Nina Error";
         if (_uniqueCode >= 0)
@@ -20,10 +21,13 @@ public static class NinaError {
         if (_pos != null) {
             int linei = _pos.Value.line + 1;
             int coli = _pos.Value.col + 1;
+            string file = _pos.Value.file;
             string line = linei >= 0 ? linei.ToString() : "unknown";
             string col = coli >= 0 ? coli.ToString() : "unknown";
-            err += "at " + _pos.Value.file + " ("
-                + line + ", " + col + ")";
+            if (! _vague)
+                err += "at " + file + " (" + line + ", " + col + ")";
+            else
+                err += "at " + file + " , ABOUT at line " + line;
         }
         err += "\n" + _msg;
         Console.WriteLine(err);

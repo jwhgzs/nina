@@ -81,8 +81,8 @@ static class NinaCodeResolver {
                 isOperator = NinaCodeBlockUtil.supposeOperator(v, out op, out op_lv);
                 if (isOperator
                         && (
-                            op == NinaOperatorType.Add
-                            || op == NinaOperatorType.Sub
+                            NinaCodeBlockUtil.operators_vagues
+                                .ContainsKey(op)
                         )
                         && (
                             buf.Length == 0 && ret.Count > 0
@@ -93,11 +93,8 @@ static class NinaCodeResolver {
                                         && ret.Last().val_op != NinaOperatorType.MBraR))
                                 : false
                         )) {
-                    if (op == NinaOperatorType.Add)
-                        op = NinaOperatorType.Pos;
-                    else if (op == NinaOperatorType.Sub)
-                        op = NinaOperatorType.Neg;
-                    op_lv = NinaCodeBlockUtil.operatorsRank_unary;
+                    op = NinaCodeBlockUtil.operators_vagues[op];
+                    op_lv = NinaCodeBlockUtil.operatorsRank[op];
                 }
                 isVoid = NinaCodeBlockUtil.isVoid(v);
                 isQuote = NinaCodeBlockUtil.isQuote(v);

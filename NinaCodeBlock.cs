@@ -54,7 +54,8 @@ struct NinaCodeBlock {
             val_op = _assert_op;
             val_op_lv = _assert_op_lv;
             val_op_unary
-                = NinaCodeBlockUtil.operators_unarys.Contains((int) val_op !);
+                = NinaCodeBlockUtil.operators_unarys.Contains(
+                    (NinaOperatorType) val_op !);
         }
         else if (_assert == NinaCodeBlockType.Keyword) {
             code = _code;
@@ -70,7 +71,8 @@ struct NinaCodeBlock {
         else if (_assert == NinaCodeBlockType.Number) {
             code = _code;
             val_num = _assert_num;
-            val_num_dotted = ((int?) val_num)!.Value != val_num!.Value;
+            val_num_dotted
+                = Math.Floor((double) val_num !) != val_num!.Value;
             val_str = null;
             val_sy = null;
             val_kw = null;

@@ -31,6 +31,20 @@ static class NinaCompiler {
             bool isEnd = isEof || isReturner;
             bool isScoperL = ! isEof && v!.Value.val_sy == NinaSymbolType.CBraL
                 && (isBeginner || _blocks[_i - 1].type == NinaCodeBlockType.Operator);
+            if (! isBeginner && v != null && v.Value.val_op_unary == true
+                    && _blocks[_i - 1].val_sy == NinaSymbolType.CBraR
+                    && NinaCodeBlockUtil.operators_vagues.ContainsValue(
+                        (NinaOperatorType) v.Value.val_op !)) {
+                NinaCodeBlock nblock = v.Value;
+                nblock.val_op
+                    = NinaCodeBlockUtil.operators_vagues
+                        .First(a => a.Value == v.Value.val_op).Key;
+                nblock.val_op_unary = false;
+                nblock.val_op_lv
+                    = NinaCodeBlockUtil.operatorsRank[(NinaOperatorType) nblock.val_op !];
+                v = nblock;
+                _blocks[_i] = (NinaCodeBlock) v !;
+            }
 
             if (isBeginner && isReturner)
                 return new NinaExprTree(false);
@@ -120,8 +134,8 @@ static class NinaCompiler {
                         do {
                             if (p!.boss == null
                                     || p.boss.block.val_op_lv < bufOpLv
-                                    || (bufOpLv == NinaCodeBlockUtil.operatorsRank_unary
-                                        && p.boss.block.val_op_lv == bufOpLv)) {
+                                    || (buf_op!.Value.val_op_unary == true
+                                        && p.boss.block.val_op_unary == true)) {
                                 NinaExprTree ntree
                                     = new NinaExprTree((NinaCodeBlock) buf_op !);
                                 p.abdicate(ntree);
