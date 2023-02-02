@@ -32,7 +32,7 @@ console_printf('time: ' + (time_now() - t1) * 1000 + ' ms');
 - 动态类型语言
 - 弱类型语言
 
-这一点也与JavaScript完全一致！看来这对姐妹花是亲生的没错了。
+这几点也与JavaScript完全一致！看来这对姐妹花是亲生的没错了。
 
 # 进一步了解Nina
 由于Nina懒得写更多的自我介绍，你可以翻看项目文件中的[examples](https://github.com/jwhgzs/Nina/blob/master/examples)，结合注释来学习哦！
