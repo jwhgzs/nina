@@ -35,4 +35,8 @@ console_printf('time: ' + (time_now() - t1) * 1000 + ' ms');
 这几点也与JavaScript完全一致！看来这对姐妹花是亲生的没错了。
 
 # 进一步了解Nina
-由于Nina懒得写更多的自我介绍，你可以翻看项目文件中的[examples](https://github.com/jwhgzs/Nina/blob/master/examples)，结合注释来学习哦！
+由于Nina懒得写更多的自我介绍，你可以翻看项目文件中的[examples](https://github.com/jwhgzs/nina/blob/master/examples)，结合注释来学习哦！
+
+# Nina的VSCode扩展
+Nina的语法高亮扩展在VSCode扩展商城上线了哦！直接搜“Nina”就有了！[源码 github 地址](https://github.com/jwhgzs/nina-extension)~
+虽然不是一个生产项目，但是加上扩展玩起来也开心一些呢~
