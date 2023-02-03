@@ -46,7 +46,7 @@ static class NinaCompiler {
                 _blocks[_i] = (NinaCodeBlock) v !;
             }
 
-            if (isBeginner && isReturner)
+            if (isBeginner && (isReturner || isEof))
                 return new NinaExprTree(false);
             if (isEnd || v!.Value.type == NinaCodeBlockType.Operator || isScoperL) {
                 bool isBracket = ! isEof && ! isScoperL
@@ -206,13 +206,6 @@ static class NinaCompiler {
         );
         if (_blocks.Count == 0)
             return block;
-        if (_blocks.Last().val_sy != NinaSymbolType.Sem
-                && _blocks.Last().val_sy != NinaSymbolType.CBraR) {
-            NinaError.error("invalid end of file.",
-                500695,
-                new NinaErrorPosition(_blocks.Last().file,
-                    _blocks.Last().line, _blocks.Last().col));
-        }
         bool allow_elseif = false;
         List<(ANinaASTExpression, NinaASTBlockExpression)> buf_elses
             = new List<(ANinaASTExpression, NinaASTBlockExpression)>();
@@ -452,12 +445,16 @@ static class NinaCompiler {
                     }
                 }
                 else if (v.val_kw == NinaKeywordType.Return) {
-                    ANinaASTExpression? expr = resolve_expr(
+                    ANinaASTExpression expr_raw = resolve_expr(
                         _blocks: _blocks,
                         _i: ref _i
-                    ).compile() as ANinaASTExpression;
-                    if (_i > _blocks.Count || _blocks[_i].val_sy != NinaSymbolType.Sem
-                            || (_scope & NinaScopeType.Function) != NinaScopeType.Function) {
+                    ).compile();
+                    ANinaASTCommonExpression expr
+                        = expr_raw as ANinaASTCommonExpression
+                            ?? new NinaASTLiteralExpression(
+                                expr_raw.pos
+                            );
+                    if (_i < _blocks.Count && _blocks[_i].val_sy != NinaSymbolType.Sem) {
                         NinaError.error("invalid return statement.", 916850,
                             new NinaErrorPosition(v.file, v.line, v.col));
                     }
@@ -473,7 +470,8 @@ static class NinaCompiler {
                 }
                 else if (v.val_kw == NinaKeywordType.Break
                         || v.val_kw == NinaKeywordType.Continue) {
-                    if (_i + 1 > _blocks.Count - 1 || _blocks[++ _i].val_sy != NinaSymbolType.Sem
+                    if ((_i + 1 <= _blocks.Count - 1
+                            && _blocks[++ _i].val_sy != NinaSymbolType.Sem)
                             || (_scope & NinaScopeType.While) != NinaScopeType.While) {
                         NinaError.error("invalid loop escape statement.", 327023,
                             new NinaErrorPosition(v.file, v.line, v.col));
@@ -618,6 +616,41 @@ static class NinaCompiler {
                         )
                     );
                 }
+                else if (v.val_kw == NinaKeywordType.Try
+                        || v.val_kw == NinaKeywordType.Catch) {
+                    if (_i + 1 > _blocks.Count - 1
+                            || _blocks[++ _i].val_sy != NinaSymbolType.CBraL) {
+                        NinaError.error("invalid exception catcher statement.",
+                            352903,
+                            new NinaErrorPosition(v.file, v.line, v.col));
+                    }
+                    NinaASTBlockExpression body
+                        = compile(
+                            _blocks: _blocks,
+                            _i: ref _i,
+                            _scope: _scope | NinaScopeType.Try,
+                            _cscope: NinaScopeType.Try
+                        );
+                    if (v.val_kw == NinaKeywordType.Try) {
+                        block.stms.Add(
+                            new NinaASTTryStatement(
+                                body, body.pos
+                            )
+                        );
+                    }
+                    else {
+                        if (block.stms.Count == 0
+                                || block.stms.Last() is not NinaASTTryStatement main
+                                || main.block_catch != null) {
+                            NinaError.error("invalid exception catcher statement.",
+                                239021,
+                                new NinaErrorPosition(v.file, v.line, v.col));
+                        }
+                        else {
+                            main.block_catch = body;
+                        }
+                    }
+                }
                 else {
                     NinaError.error("unexpected error.",
                         284747,
@@ -644,12 +677,12 @@ static class NinaCompiler {
 
         return block;
     }
-    public static void execute(List<NinaCodeBlock> _blocks) {
+    public static NinaASTBlockExpression compile(
+            List<NinaCodeBlock> _blocks) {
         int i = - 1;
-        NinaASTBlockExpression block = compile(
+        return compile(
             _blocks: _blocks,
             _i: ref i
         );
-        NinaILCompiler.run(block);
     }
 }

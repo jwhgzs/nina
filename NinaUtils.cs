@@ -25,18 +25,19 @@ static class NinaCodeBlockUtil {
         ["var"] = NinaKeywordType.Var,
         ["const"] = NinaKeywordType.Const,
         ["func"] = NinaKeywordType.Func,
-        ["class"] = NinaKeywordType.Class,
         ["if"] = NinaKeywordType.If,
         ["else"] = NinaKeywordType.Else,
         ["elseif"] = NinaKeywordType.Elseif,
         ["while"] = NinaKeywordType.While,
         ["return"] = NinaKeywordType.Return,
         ["break"] = NinaKeywordType.Break,
-        ["continue"] = NinaKeywordType.Continue
+        ["continue"] = NinaKeywordType.Continue,
+        ["try"] = NinaKeywordType.Try,
+        ["catch"] = NinaKeywordType.Catch
     };
     public static List<string> specialIdentifiers
             = new List<string> {
-        "self", "this"
+        "self", "this", "argument", "exception"
     };
     public static Dictionary<string, NinaOperatorType> operators
             = new Dictionary<string, NinaOperatorType> {

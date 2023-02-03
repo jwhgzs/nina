@@ -38,7 +38,7 @@ public static class NinaAPIUtil {
         else if (_o is long l)
             return l != 0;
         else
-            NinaError.hot("invalid convert to numeric.", 123901);
+            NinaError.error("invalid convert to numeric.", 123901);
         return false;
     }
     public static double toNumber(object _o) {
@@ -55,7 +55,7 @@ public static class NinaAPIUtil {
         else if (_o is long l)
             return l;
         else
-            NinaError.hot("invalid conversion to numeric.", 412910);
+            NinaError.error("invalid conversion to numeric.", 412910);
         return 0;
     }
     public static string toTypeDesc(object _o) {
@@ -68,8 +68,12 @@ public static class NinaAPIUtil {
             return "[String]";
         else if (_o is NinaDataArray)
             return "[Array]";
-        else if (_o is NinaDataObject)
-            return "[Object]";
+        else if (_o is NinaDataObject o)
+            return o.ContainsKey("type")
+                ? "[Object: "
+                    + NinaAPIUtil.toString(o["type"])
+                    + "]"
+                : "[Object]";
         else if (_o is Delegate)
             return "[Function]";
         else
@@ -188,7 +192,7 @@ public static class NinaAPIUtil {
             return obj.ContainsKey(key) ? obj[key] : null !;
         }
         else {
-            NinaError.hot("invalid target for member access operation.", 626768);
+            NinaError.error("invalid target for member access operation.", 626768);
         }
         return null !;
     }
@@ -197,7 +201,7 @@ public static class NinaAPIUtil {
         if (_obj is NinaDataArray arr) {
             int key = (int) toNumber(_key);
             if (arr.my_consts.ContainsKey(key)) {
-                NinaError.hot(
+                NinaError.error(
                     "invalid assignment to constant member.",
                     594943);
             }
@@ -211,7 +215,7 @@ public static class NinaAPIUtil {
         else if (_obj is NinaDataObject obj) {
             string key = toString(_key);
             if (obj.my_consts.ContainsKey(key)) {
-                NinaError.hot(
+                NinaError.error(
                     "invalid assignment to a constant member.",
                     794922);
             }
@@ -220,7 +224,7 @@ public static class NinaAPIUtil {
                 obj.my_consts[key] = true;
         }
         else {
-            NinaError.hot("invalid target to access member.", 426694);
+            NinaError.error("invalid target to access member.", 426694);
         }
         return _val;
     }
@@ -229,7 +233,7 @@ public static class NinaAPIUtil {
         return member_init(_obj, _key, _val, 0);
     }
     public static void error(string _msg, int _uniqueCode) {
-        NinaError.hot(_msg, _uniqueCode);
+        NinaError.error(_msg, _uniqueCode);
     }
     public static void error_full(
             string _msg, int _uniqueCode,
@@ -244,36 +248,74 @@ public static class NinaAPIUtil {
         StackTrace trace
             = new StackTrace(_ex, true);
         StackFrame[] frames = trace.GetFrames();
-
-        string ss = "";
-        int offset = - 1;
-        for (int i = 0; i < frames.Length; ++ i) {
-            StackFrame v = frames[i];
-            MethodBase nmtd = v.GetMethod() !;
-            string nss = NinaCompilerUtil.snapshot_method(nmtd);
-            if (_pos_table.ContainsKey(nss)) {
-                ss = nss;
-                offset = v.GetILOffset();
-                byte[] a = nmtd.GetMethodBody()!.GetILAsByteArray()!;
-                NinaDebugger.read_ILCode(a, ref offset);
-                break;
+        
+        List<NinaErrorPosition> posList = new List<NinaErrorPosition>();
+        var doit = bool (int _n) => {
+            string ss = "";
+            int offset = - 1;
+            int matched = 0;
+            for (int i = 0; i < frames.Length; ++ i) {
+                StackFrame v = frames[i];
+                MethodBase nmtd = v.GetMethod() !;
+                string nss = NinaCompilerUtil.snapshot_method(nmtd);
+                if (_pos_table.ContainsKey(nss)) {
+                    if (matched >= _n) {
+                        ss = nss;
+                        offset = v.GetILOffset();
+                        byte[] a = nmtd.GetMethodBody()!.GetILAsByteArray()!;
+                        NinaDebugger.read_ILCode(a, ref offset);
+                        break;
+                    }
+                    else {
+                        ++ matched;
+                    }
+                }
             }
-        }
-        if (ss.Length == 0 || offset < 0) {
-            NinaError.error("unexpected error.", 203193);
-        }
-
-        List<(int, NinaErrorPosition)> table = _pos_table[ss];
-        for (int i = 0; i < table.Count; ++ i) {
-            var (os, pos) = table.ElementAt(i);
-            if (os >= offset) {
-                NinaError.error(_ex.Message, - 1, pos, true);
+            if (ss.Length == 0 || offset < 0) {
+                return false;
             }
-        }
-        if (table.Count > 0)
-            NinaError.error(_ex.Message, - 1, table.Last().Item2, true);
+
+            List<(int, NinaErrorPosition)> table = _pos_table[ss];
+            for (int i = 0; i < table.Count; ++ i) {
+                var (os, pos) = table.ElementAt(i);
+                if (os >= offset) {
+                    posList.Add(pos);
+                    return true;
+                }
+            }
+
+            return false;
+        };
+
+        for (int i = 0; doit(i); ++ i);
+        if (posList.Count > 0)
+            NinaError.error(_ex.Message, - 1, _posList: posList);
         else
-            NinaError.error(_ex.Message, - 1, null, true);
+            NinaError.error(_ex.Message, - 1, _pos: null);
+    }
+    private static object convert_ex_resolve_code(string _msg) {
+        if (_msg.StartsWith(NinaError.header)) {
+            _msg = _msg.Substring(NinaError.header.Length);
+            if (_msg.StartsWith("(#")) {
+                _msg = _msg.Substring("(#".Length);
+                string code = "";
+                int i = 0;
+                while (char.IsNumber(_msg[i])) {
+                    code += _msg[i ++];
+                }
+                if (code.Length > 0)
+                    return int.Parse(code);
+            }
+        }
+        return null !;
+    }
+    public static object convert_ex(Exception _ex) {
+        string msg = _ex.Message;
+        return new NinaDataObject() {
+            ["type"] = "NinaException",
+            ["message"] = msg,
+            ["code"] = convert_ex_resolve_code(msg)
+        };
     }
 }
 
@@ -283,6 +325,19 @@ public static class NinaAPI {
     public static object @false = false;
     public static object math_PI = Math.PI;
     public static object math_E = Math.E;
+    public static object eval(object _code, object _arg) {
+        string code = NinaAPIUtil.toString(_code);
+        try {
+            return NinaCore.execute("[Dynamic Codes]", code, _arg) !;
+        }
+        catch (TargetInvocationException ex) {
+            NinaError.error(
+                "error when evaluating: "
+                    + NinaError.trim_header(ex.InnerException!.Message),
+                352982);
+        }
+        return null !;
+    }
     public static object console_print(object _data) {
         string v = NinaAPIUtil.toString(_data);
         Console.Write(v);
@@ -421,14 +476,14 @@ public static class NinaAPI {
     public static object array_length(object _arr) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
-            NinaError.hot("invalid array to operate.", 796923);
+            NinaError.error("invalid array to operate.", 796923);
         }
         return (double) arr!.Count;
     }
     public static object array_append(object _arr, object _item) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
-            NinaError.hot("invalid array to operate.", 120312);
+            NinaError.error("invalid array to operate.", 120312);
         }
         arr!.Add(_item);
         return true;
@@ -437,7 +492,7 @@ public static class NinaAPI {
         NinaDataArray? arr = _arr as NinaDataArray;
         int n = (int) NinaAPIUtil.toNumber(_n);
         if (arr == null) {
-            NinaError.hot("invalid array to operate.", 102914);
+            NinaError.error("invalid array to operate.", 102914);
         }
         try {
             arr!.Insert(n, _item);
@@ -450,7 +505,7 @@ public static class NinaAPI {
     public static object array_pop(object _arr) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
-            NinaError.hot("invalid array to operate.", 593192);
+            NinaError.error("invalid array to operate.", 593192);
         }
         try {
             arr!.RemoveAt(arr.Count - 1);
@@ -464,7 +519,7 @@ public static class NinaAPI {
         NinaDataArray? arr = _arr as NinaDataArray;
         int n = (int) NinaAPIUtil.toNumber(_n);
         if (arr == null) {
-            NinaError.hot("invalid array to operate.", 605912);
+            NinaError.error("invalid array to operate.", 605912);
         }
         try {
             arr!.RemoveAt(n);
@@ -477,7 +532,7 @@ public static class NinaAPI {
     public static object array_clear(object _arr) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
-            NinaError.hot("invalid array to operate.", 491021);
+            NinaError.error("invalid array to operate.", 491021);
         }
         arr!.Clear();
         return true;
@@ -485,7 +540,7 @@ public static class NinaAPI {
     public static object array_find(object _arr, object _item) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
-            NinaError.hot("invalid array to operate.", 701901);
+            NinaError.error("invalid array to operate.", 701901);
         }
         for (int i = 0; i < arr!.Count; ++ i) {
             if (NinaAPIUtil.opLEqu_bool(arr![i], _item)) {
@@ -497,7 +552,7 @@ public static class NinaAPI {
     public static object array_find_last(object _arr, object _item) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
-            NinaError.hot("invalid array to operate.", 249931);
+            NinaError.error("invalid array to operate.", 249931);
         }
         for (int i = arr!.Count - 1; i >= 0; -- i) {
             if (NinaAPIUtil.opLEqu_bool(arr![i], _item)) {
@@ -518,7 +573,7 @@ public static class NinaAPI {
     public static object array_to_json(object _arr) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
-            NinaError.hot("invalid array to operate.", 120491);
+            NinaError.error("invalid array to operate.", 120491);
         }
         try {
             return
@@ -548,7 +603,7 @@ public static class NinaAPI {
     public static object object_length(object _obj) {
         NinaDataObject? obj = _obj as NinaDataObject;
         if (obj == null) {
-            NinaError.hot("invalid object to operate.", 796923);
+            NinaError.error("invalid object to operate.", 796923);
         }
         return (double) obj!.Count;
     }
@@ -556,7 +611,7 @@ public static class NinaAPI {
         NinaDataObject? obj = _obj as NinaDataObject;
         string key = NinaAPIUtil.toString(_key);
         if (obj == null) {
-            NinaError.hot("invalid object to operate.", 123091);
+            NinaError.error("invalid object to operate.", 123091);
         }
         return obj!.ContainsKey(key);
     }
@@ -564,7 +619,7 @@ public static class NinaAPI {
         NinaDataObject? obj = _obj as NinaDataObject;
         string item = NinaAPIUtil.toString(_item);
         if (obj == null) {
-            NinaError.hot("invalid object to operate.", 190341);
+            NinaError.error("invalid object to operate.", 190341);
         }
         for (int i = 0; i < obj!.Count; ++ i) {
             var (k, v) = obj.ElementAt(i);
@@ -578,7 +633,7 @@ public static class NinaAPI {
         NinaDataObject? obj = _obj as NinaDataObject;
         string item = NinaAPIUtil.toString(_item);
         if (obj == null) {
-            NinaError.hot("invalid object to operate.", 765402);
+            NinaError.error("invalid object to operate.", 765402);
         }
         for (int i = obj!.Count - 1; i >= 0; ++ i) {
             var (k, v) = obj.ElementAt(i);
@@ -592,14 +647,14 @@ public static class NinaAPI {
         NinaDataObject? obj = _obj as NinaDataObject;
         string key = NinaAPIUtil.toString(_key);
         if (obj == null) {
-            NinaError.hot("invalid object to operate.", 790422);
+            NinaError.error("invalid object to operate.", 790422);
         }
         return obj!.Remove(key);
     }
     public static object object_clear(object _obj) {
         NinaDataObject? obj = _obj as NinaDataObject;
         if (obj == null) {
-            NinaError.hot("invalid object to operate.", 234012);
+            NinaError.error("invalid object to operate.", 234012);
         }
         obj!.Clear();
         return true;
@@ -607,7 +662,7 @@ public static class NinaAPI {
     public static object object_to_json(object _obj) {
         NinaDataObject? obj = _obj as NinaDataObject;
         if (obj == null) {
-            NinaError.hot("invalid object to operate.", 102941);
+            NinaError.error("invalid object to operate.", 102941);
         }
         try {
             return
@@ -652,6 +707,7 @@ public static class NinaAPI {
             = DateTimeOffset.FromUnixTimeSeconds((long) s)
                 .LocalDateTime;
         return new NinaDataObject {
+            ["type"] = "NinaTime",
             ["ts"] = s,
             ["y"] = (double) now.Year,
             ["m"] = (double) now.Month,

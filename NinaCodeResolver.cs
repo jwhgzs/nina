@@ -186,12 +186,12 @@ static class NinaCodeResolver {
                         bufLine = currLine;
                         bufCol = currCol;
                     }
-                    buf += v;
                     if (! char.IsNumber(v))
                         isNumber = false;
                     if (! (char.IsLetter(v) || (char.IsNumber(v) && buf.Length > 0)
                             || v == '$' || v == '_'))
                         isIdentifier = false;
+                    buf += v;
                 }
             }
         }

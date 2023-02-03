@@ -180,3 +180,13 @@ class NinaASTWordStatement : ANinaASTStatement {
         expr = _expr;
     }
 }
+class NinaASTTryStatement : ANinaASTStatement {
+    public NinaASTBlockExpression? block_catch;
+    public NinaASTTryStatement(NinaASTBlockExpression _block,
+            NinaErrorPosition _pos,
+            NinaASTBlockExpression? _block_catch = null)
+            : base(_pos) {
+        block = _block;
+        block_catch = _block_catch;
+    }
+}

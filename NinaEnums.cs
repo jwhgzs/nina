@@ -14,8 +14,9 @@ enum NinaSymbolType {
 }
 enum NinaKeywordType {
     None,
-    Var, Const, Func, Class,
-    If, Else, Elseif, While, Return, Break, Continue
+    Var, Const, Func,
+    If, Else, Elseif, While, Return, Break, Continue,
+    Try, Catch
 }
 enum NinaOperatorType {
     None,
@@ -30,10 +31,11 @@ enum NinaOperatorType {
 enum NinaScopeType {
     None = 0,
     Root = 1 << 1,
-    Class = 1 << 2,
-    Function = 1 << 3,
-    If = 1 << 4,
-    Else = 1 << 5,
-    Elseif = 1 << 6,
-    While = 1 << 7
+    Function = 1 << 2,
+    If = 1 << 3,
+    Else = 1 << 4,
+    Elseif = 1 << 5,
+    While = 1 << 6,
+    Try = 1 << 7,
+    Catch = 1 << 8
 }

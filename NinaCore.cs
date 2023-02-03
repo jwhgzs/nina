@@ -1,17 +1,42 @@
+using System.Reflection;
+
 namespace Nina;
 
 static class NinaCore {
+    public static object? execute(
+            string _src, string _code, object? _arg = null) {
+        List<NinaCodeBlock> blocks = NinaCodeResolver.blocking(_src, _code);
+        NinaASTBlockExpression ast = NinaCompiler.compile(blocks);
+        return NinaILCompiler.execute(ast, _arg);
+    }
     public static void Main(string[] _args) {
-        if (_args.Length < 1) {
-            NinaError.error("Nina needs source file's location.", 125433);
+        try {
+            if (_args.Length < 1) {
+                NinaError.error("Nina needs source file's location.", 125433);
+            }
+            string src = _args[0];
+            string code = "";
+            try {
+                code = File.ReadAllText(src);
+            }
+            catch {
+                NinaError.error("Nina fails to read the source file.", 144178);
+            }
+            execute(src, code);
         }
-        string src = _args[0];
-        string code = "";
-        try { code = File.ReadAllText(src); }
-        catch {
-            NinaError.error("Nina fails to read the source file.", 144178);
+        #if ! MODE_DEBUG
+        catch (TargetInvocationException tex) {
+            Console.WriteLine(tex.InnerException!.Message);
+            Environment.Exit(- 1);
         }
-        List<NinaCodeBlock> blocks = NinaCodeResolver.blocking(src, code);
-        NinaCompiler.execute(blocks);
+        #endif
+        catch (Exception ex) {
+            #if ! MODE_DEBUG
+            Console.WriteLine(ex.Message);
+            #else
+            Console.WriteLine(ex.ToString());
+            #endif
+            Environment.Exit(- 1);
+        }
     }
 }
