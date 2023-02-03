@@ -253,7 +253,7 @@ static class NinaILCompiler {
                     parameterTypes: new [] { typeof(object[]) }
                 );
                 string ss = NinaCompilerUtil.snapshot_method(
-                    mb
+                    block.pos.file, mb
                 );
                 FieldBuilder fb_self
                     = cl.DefineField(
@@ -913,8 +913,11 @@ static class NinaILCompiler {
                         _pos_table: _pos_table,
                         _ss: _ss
                     );
-                    _g.Emit(OpCodes.Stsfld, builder);
                 }
+                else {
+                    _g.Emit(OpCodes.Ldnull);
+                }
+                _g.Emit(OpCodes.Stsfld, builder);
             }
         }
         else if (_stm is NinaASTIfStatement ifs) {
@@ -1088,6 +1091,7 @@ static class NinaILCompiler {
                     attributes: FieldAttributes.Public | FieldAttributes.Static
                 );
                 _globs["exception"] = exReg;
+                _g.Emit(OpCodes.Ldstr, trys.pos.file);
                 _g.Emit(OpCodes.Call, typeof(NinaAPIUtil).GetMethod("convert_ex") !);
                 _g.Emit(OpCodes.Stsfld, exReg);
                 compile_block(
@@ -1120,6 +1124,7 @@ static class NinaILCompiler {
         postable(_pos_table, _ss, _g, _stm);
     }
     public static void init_apis(
+            string _file,
             TypeBuilder _tb, MethodBuilder _mb, ILGenerator _g,
             Dictionary<string, FieldInfo> _globs,
             Dictionary<string, FieldInfo> _glob_consts,
@@ -1188,12 +1193,14 @@ static class NinaILCompiler {
                     )
                 );
             postable(
-                _pos_table, NinaCompilerUtil.snapshot_method(mb), mg,
-                ph
+                _pos_table,
+                NinaCompilerUtil.snapshot_method(_file, mb),
+                mg, ph
             );
             postable(
-                _pos_table, NinaCompilerUtil.snapshot_method(_mb), _g,
-                ph
+                _pos_table,
+                NinaCompilerUtil.snapshot_method(_file, _mb),
+                _g, ph
             );
         }
 
@@ -1239,10 +1246,11 @@ static class NinaILCompiler {
             _returnReg: returnReg,
             _returnLabel: returnLabel,
             _pos_table: _pos_table,
-            _ss: NinaCompilerUtil.snapshot_method(_builder)
+            _ss:
+                NinaCompilerUtil.snapshot_method(_block.pos.file, _builder)
         );
         _g.BeginCatchBlock(typeof(Exception));
-        _g.Emit(OpCodes.Ldarg_0);
+        _g.Emit(OpCodes.Ldstr, _block.pos.file);
         _g.Emit(OpCodes.Call, typeof(NinaAPIUtil).GetMethod("error_ex") !);
         _g.EndExceptionBlock();
 
@@ -1268,11 +1276,10 @@ static class NinaILCompiler {
             = new Dictionary<string, List<(int, NinaErrorPosition)>>();
         MethodBuilder mtdb = tb.DefineMethod(
             name: "Main",
-            attributes: MethodAttributes.Public
-                | MethodAttributes.Static,
+            attributes: MethodAttributes.Public | MethodAttributes.Static,
             callingConvention: CallingConventions.Standard,
             returnType: typeof(object),
-            parameterTypes: new [] { pos_table.GetType(), typeof(object) }
+            parameterTypes: new [] { typeof(object) }
         );
         ILGenerator mg = mtdb.GetILGenerator();
         
@@ -1289,16 +1296,13 @@ static class NinaILCompiler {
         FieldBuilder defaultThis = newBuiltinField();
         FieldBuilder defaultSelf = newBuiltinField();
         FieldBuilder defaultArgument = newBuiltinField();
-        mg.Emit(OpCodes.Ldnull);
-        mg.Emit(OpCodes.Stsfld, defaultThis);
-        mg.Emit(OpCodes.Ldnull);
-        mg.Emit(OpCodes.Stsfld, defaultSelf);
-        mg.Emit(OpCodes.Ldarg_1);
+        mg.Emit(OpCodes.Ldarg_0);
         mg.Emit(OpCodes.Stsfld, defaultArgument);
         globs["this"] = defaultThis;
         globs["self"] = defaultSelf;
         globs["argument"] = defaultArgument;
         init_apis(
+            _file: _block.pos.file,
             _tb: tb,
             _mb: mtdb,
             _g: mg,
@@ -1320,6 +1324,9 @@ static class NinaILCompiler {
 
         Type tp = tb.CreateType() !;
         MethodInfo mi = tp.GetMethod("Main") !;
-        return mi.Invoke(null, new [] { pos_table, _arg });
+        NinaAPIUtil.pos_table = NinaCompilerUtil.merge_dictionaries(
+            NinaAPIUtil.pos_table, pos_table
+        );
+        return mi.Invoke(null, new [] { _arg });
     }
 }

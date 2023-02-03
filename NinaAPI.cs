@@ -242,9 +242,9 @@ public static class NinaAPIUtil {
             _file, _line, _col
         ));
     }
-    public static void error_ex(
-            Exception _ex,
-            Dictionary<string, List<(int, NinaErrorPosition)>> _pos_table) {
+    public static Dictionary<string, List<(int, NinaErrorPosition)>> pos_table
+        = new Dictionary<string, List<(int, NinaErrorPosition)>>();
+    public static string error_ex_report(Exception _ex, string _file) {
         StackTrace trace
             = new StackTrace(_ex, true);
         StackFrame[] frames = trace.GetFrames();
@@ -257,8 +257,8 @@ public static class NinaAPIUtil {
             for (int i = 0; i < frames.Length; ++ i) {
                 StackFrame v = frames[i];
                 MethodBase nmtd = v.GetMethod() !;
-                string nss = NinaCompilerUtil.snapshot_method(nmtd);
-                if (_pos_table.ContainsKey(nss)) {
+                string nss = NinaCompilerUtil.snapshot_method(_file, nmtd);
+                if (pos_table.ContainsKey(nss)) {
                     if (matched >= _n) {
                         ss = nss;
                         offset = v.GetILOffset();
@@ -275,7 +275,7 @@ public static class NinaAPIUtil {
                 return false;
             }
 
-            List<(int, NinaErrorPosition)> table = _pos_table[ss];
+            List<(int, NinaErrorPosition)> table = pos_table[ss];
             for (int i = 0; i < table.Count; ++ i) {
                 var (os, pos) = table.ElementAt(i);
                 if (os >= offset) {
@@ -288,10 +288,17 @@ public static class NinaAPIUtil {
         };
 
         for (int i = 0; doit(i); ++ i);
-        if (posList.Count > 0)
-            NinaError.error(_ex.Message, - 1, _posList: posList);
-        else
-            NinaError.error(_ex.Message, - 1, _pos: null);
+        return NinaError.gen_report(
+            _ex.Message, - 1,
+            posList.Count > 0
+                ? posList
+                : new List<NinaErrorPosition>()
+        );
+    }
+    public static void error_ex(Exception _ex, string _file) {
+        throw new Exception(
+            error_ex_report(_ex, _file)
+        );
     }
     private static object convert_ex_resolve_code(string _msg) {
         if (_msg.StartsWith(NinaError.header)) {
@@ -309,8 +316,8 @@ public static class NinaAPIUtil {
         }
         return null !;
     }
-    public static object convert_ex(Exception _ex) {
-        string msg = _ex.Message;
+    public static object convert_ex(Exception _ex, string _file) {
+        string msg = error_ex_report(_ex, _file);
         return new NinaDataObject() {
             ["type"] = "NinaException",
             ["message"] = msg,
@@ -328,11 +335,14 @@ public static class NinaAPI {
     public static object eval(object _code, object _arg) {
         string code = NinaAPIUtil.toString(_code);
         try {
-            return NinaCore.execute("[Dynamic Codes]", code, _arg) !;
+            return NinaCore.execute(
+                "[Dynamic Codes: " + Guid.NewGuid().ToString("N") + "]",
+                code, _arg
+            ) !;
         }
         catch (TargetInvocationException ex) {
             NinaError.error(
-                "error when evaluating: "
+                "error when evaluating:\n"
                     + NinaError.trim_header(ex.InnerException!.Message),
                 352982);
         }

@@ -333,9 +333,11 @@ static class NinaCompilerUtil {
         }
         return ret;
     }
-    public static string snapshot_method(MethodBase _mtd) {
+    public static string snapshot_method(string _file, MethodBase _mtd) {
         return
-            _mtd.DeclaringType!.FullName !
+            _file
+            + ":"
+            + _mtd.DeclaringType!.FullName !
             + "."
             + _mtd.Name;
     }

@@ -3,12 +3,14 @@ using System.Reflection;
 namespace Nina;
 
 static class NinaCompiler {
-    public static NinaExprTree resolve_expr(List<NinaCodeBlock> _blocks,
+    public static NinaExprTree resolve_expr(
+            List<NinaCodeBlock> _blocks,
             ref int _i, NinaOperatorType? _ender_op1 = null,
             NinaOperatorType? _ender_op2 = null) {
         if (_blocks.Count == 0)
             return new NinaExprTree(false);
 
+        string file = _blocks[0].file;
         NinaExprTree? tree = null;
         NinaExprTree? ptr = null;
         NinaExprTree? buf = null;
@@ -100,6 +102,7 @@ static class NinaCompiler {
                 else if (isScoperL) {
                     buf = new NinaExprTree(
                         compile(
+                            _file: file,
                             _blocks: _blocks,
                             _i: ref _i,
                             _scope: NinaScopeType.Function,
@@ -198,11 +201,15 @@ static class NinaCompiler {
 
         return tree ?? new NinaExprTree(false);
     }
-    public static NinaASTBlockExpression compile(List<NinaCodeBlock> _blocks,
+    public static NinaASTBlockExpression compile(
+            string _file,
+            List<NinaCodeBlock> _blocks,
             ref int _i, NinaScopeType _scope = NinaScopeType.Root,
             NinaScopeType _cscope = NinaScopeType.Root) {
         NinaASTBlockExpression block = new NinaASTBlockExpression(
-            new NinaErrorPosition()
+            new NinaErrorPosition(
+                _file, - 2, - 2
+            )
         );
         if (_blocks.Count == 0)
             return block;
@@ -286,7 +293,10 @@ static class NinaCompiler {
                             }
                             else {
                                 vars.vars.list.Add(
-                                    (expr.block.code, null)
+                                    (
+                                        NinaCompilerUtil.format_identifier(expr.block.code),
+                                        null
+                                    )
                                 );
                             }
                         }
@@ -370,6 +380,7 @@ static class NinaCompiler {
                         else
                             nscope = NinaScopeType.While;
                         NinaASTBlockExpression body = compile(
+                            _file: v.file,
                             _blocks: _blocks,
                             _i: ref _i,
                             _scope: _scope | nscope,
@@ -583,6 +594,7 @@ static class NinaCompiler {
                     }
                     
                     NinaASTBlockExpression body = compile(
+                        _file: v.file,
                         _blocks: _blocks,
                         _i: ref _i,
                         _scope: NinaScopeType.Function,
@@ -626,6 +638,7 @@ static class NinaCompiler {
                     }
                     NinaASTBlockExpression body
                         = compile(
+                            _file: v.file,
                             _blocks: _blocks,
                             _i: ref _i,
                             _scope: _scope | NinaScopeType.Try,
@@ -678,9 +691,10 @@ static class NinaCompiler {
         return block;
     }
     public static NinaASTBlockExpression compile(
-            List<NinaCodeBlock> _blocks) {
+            string _file, List<NinaCodeBlock> _blocks) {
         int i = - 1;
         return compile(
+            _file: _file,
             _blocks: _blocks,
             _i: ref i
         );
