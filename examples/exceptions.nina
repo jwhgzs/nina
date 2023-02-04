@@ -11,6 +11,9 @@ catch {
     console_printf('错误代号：' + exception.code);
     console_printf('错误信息：' + exception.message);
 }
+// 注意，在这里（catch 语句块外）无法访问到有效的特殊变量 exception ~
+console_printf(exception);
+// 输出 [Null]
 
 // Nina中的 try - catch 并不是固定搭配哦~
 // 例如，你可以这样单独使用 try 语句：

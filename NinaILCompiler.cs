@@ -340,8 +340,7 @@ static class NinaILCompiler {
 
                 LocalBuilder returnReg = g.DeclareLocal(typeof(object));
                 Label returnLabel = g.DefineLabel();
-                g.Emit(OpCodes.Ldloc_0);
-                g.Emit(OpCodes.Ldc_I4_0);
+                g.Emit(OpCodes.Ldloc_1);
                 g.Emit(OpCodes.Ldnull);
                 g.Emit(OpCodes.Ldftn, mb);
                 g.Emit(
@@ -350,9 +349,9 @@ static class NinaILCompiler {
                 );
                 g.Emit(
                     OpCodes.Call,
-                    typeof(List<object>).GetMethod("Insert") !
+                    typeof(List<object>).GetMethod("Add") !
                 );
-                ins.Insert(0, "self");
+                in_consts.Add("self");
                 for (int i = 0; i < plistCount; ++ i) {
                     var (vname, init) = plist[i];
                     ins.Add(vname);
@@ -369,8 +368,8 @@ static class NinaILCompiler {
                             _expr: init,
                             _globs: _globs,
                             _glob_consts: _glob_consts,
-                            _ins: _ins,
-                            _in_consts: _in_consts,
+                            _ins: ins,
+                            _in_consts: in_consts,
                             _outs: outs,
                             _out_consts: out_consts,
                             _pos_table: _pos_table,
@@ -394,7 +393,7 @@ static class NinaILCompiler {
                     _globs: _globs,
                     _glob_consts: _glob_consts,
                     _ins: ins,
-                    _in_consts: _in_consts,
+                    _in_consts: in_consts,
                     _outs: outs,
                     _out_consts: out_consts,
                     _returnReg: returnReg,
@@ -1137,7 +1136,7 @@ static class NinaILCompiler {
                         type: typeof(object),
                         attributes: FieldAttributes.Public | FieldAttributes.Static
                     );
-                _globs["exception"] = exReg;
+                _glob_consts["exception"] = exReg;
                 _g.Emit(OpCodes.Ldstr, trys.pos.file);
                 _g.Emit(OpCodes.Call, typeof(NinaAPIUtil).GetMethod("convert_ex") !);
                 _g.Emit(OpCodes.Stsfld, exReg);
@@ -1161,6 +1160,9 @@ static class NinaILCompiler {
             else {
                 _g.Emit(OpCodes.Pop);
             }
+            _g.BeginFinallyBlock();
+            _g.Emit(OpCodes.Ldnull);
+            _g.Emit(OpCodes.Stsfld, _glob_consts["exception"]);
             _g.EndExceptionBlock();
         }
         else {
@@ -1340,11 +1342,13 @@ static class NinaILCompiler {
         FieldBuilder defaultThis = newBuiltinField();
         FieldBuilder defaultSelf = newBuiltinField();
         FieldBuilder defaultArgument = newBuiltinField();
+        FieldBuilder defaultException = newBuiltinField();
         mg.Emit(OpCodes.Ldarg_0);
         mg.Emit(OpCodes.Stsfld, defaultArgument);
         globs["this"] = defaultThis;
-        globs["self"] = defaultSelf;
-        globs["argument"] = defaultArgument;
+        glob_consts["self"] = defaultSelf;
+        glob_consts["argument"] = defaultArgument;
+        glob_consts["exception"] = defaultException;
         init_apis(
             _file: _block.pos.file,
             _tb: tb,

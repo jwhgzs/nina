@@ -29,3 +29,14 @@ console_printf(
         "结果："
     )
 );
+
+// Nina中的特殊变量多种多样：
+// this, self, argument, exception
+// 不过这些变量不都拥有一样的性质，例如：
+this = null;
+self = null;
+argument = null;
+exception = null;
+// 如果一行一行执行，只有第一行（对 this 赋值）不会报错
+// 为了操作安全，Nina建议器将 self, argument, exception 都设置为常量，以避免不必要的错误
+// 由于 this 可通过 @ 修饰符来显式指定，又经过性能等多方面考虑，Nina将特殊变量 this 设置为变量~
