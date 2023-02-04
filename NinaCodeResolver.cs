@@ -60,8 +60,10 @@ static class NinaCodeResolver {
                 }
                 else {
                     if (i == code.Length) {
-                        NinaError.error("unpaired quotes.", 413153,
-                            new NinaErrorPosition(_file, currLine, currCol));
+                        NinaError.error(
+                            "不成对的引号.", 413153,
+                            new NinaErrorPosition(_file, currLine, currCol)
+                        );
                     }
                     buf += v;
                     if (! isBSlash) {
@@ -134,8 +136,10 @@ static class NinaCodeResolver {
                                 bufCol!.Value, buf, NinaCodeBlockType.Identifier));
                         }
                         else {
-                            NinaError.error("unsupported syntax.", 641981,
-                                new NinaErrorPosition(_file, bufLine!.Value, bufCol!.Value));
+                            NinaError.error(
+                                "不支持的语法.", 641981,
+                                new NinaErrorPosition(_file, bufLine!.Value, bufCol!.Value)
+                            );
                         }
                     }
                     

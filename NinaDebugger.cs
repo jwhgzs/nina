@@ -8,16 +8,16 @@ static class NinaDebugger {
     }
     public static void timer_start(string _tag = "untagged") {
         if (timers.ContainsKey(_tag)) {
-            NinaError.error("the given timer key already exists.", 465513);
+            NinaError.error("指定的计时器标签已存在.", 465513);
         }
         timers[_tag] = time();
     }
     public static void timer_stop(string _tag = "untagged") {
         if (! timers.ContainsKey(_tag)) {
-            NinaError.error("the given timer key does not exist.", 984015);
+            NinaError.error("指定的计时器标签不存在.", 984015);
         }
         long ms = time() - timers[_tag];
-        Console.WriteLine("[Nina Debugger #timer:" + _tag + "] " + ms + " ms");
+        Console.WriteLine("[Nina 调试器] 计时器:" + _tag + " 计时: " + ms + " ms");
         timers.Remove(_tag);
     }
     public static void print_codeBlocks(List<NinaCodeBlock> _blocks) {
@@ -41,12 +41,9 @@ static class NinaDebugger {
         }
     }
     public static void read_ILCode(byte[] _arr, ref int _i) {
-        try {
-            byte b = _arr[_i ++];
-            if (b == 0xfe) {
-                ++ _i;
-            }
+        byte b = _arr[_i ++];
+        if (b == 0xfe) {
+            ++ _i;
         }
-        catch {}
     }
 }

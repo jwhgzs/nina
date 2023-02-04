@@ -259,8 +259,7 @@ static class NinaCompilerUtil {
             }
             else {
                 NinaError.error(
-                    "unexpected expression "
-                    + "in the parameter list expression.",
+                    "形参列表表达式中有无效表达式.",
                     102931,
                     new NinaErrorPosition(_posBlock.file,
                         _posBlock.line, _posBlock.col)
@@ -310,8 +309,7 @@ static class NinaCompilerUtil {
             }
             else {
                 NinaError.error(
-                    "unexpected expression "
-                    + "in the object block expression.",
+                    "对象初始化表达式中有无效表达式.",
                     799124,
                     new NinaErrorPosition(_posBlock.file,
                         _posBlock.line, _posBlock.col)

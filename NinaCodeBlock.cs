@@ -90,7 +90,7 @@ struct NinaCodeBlock {
             val_op = null;
             val_op_lv = null;
             val_op_unary = null;
-            NinaError.error("unexpected error.", 697790);
+            NinaError.error("莫名其妙的错误.", 697790);
         }
     }
 }

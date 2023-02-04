@@ -11,7 +11,7 @@ public struct NinaErrorPosition {
 }
 
 public static class NinaError {
-    public const string header = "\n[Nina Error]\n";
+    public const string header = "\n[Nina 错误]\n";
     public static string trim_header(string _str) {
         return _str.StartsWith(header)
             ? _str.Substring(header.Length)
@@ -30,9 +30,9 @@ public static class NinaError {
             int linei = v.line + 1;
             int coli = v.col + 1;
             string file = v.file;
-            string line = linei >= 0 ? linei.ToString() : "unknown";
-            string col = coli >= 0 ? coli.ToString() : "unknown";
-            err += "\n\tat " + file + " ABOUT line " + line;
+            string line = linei >= 0 ? linei.ToString() : "(未知)";
+            string col = coli >= 0 ? coli.ToString() : "(未知)";
+            err += "\n\t位于 " + file + " 大约第 " + line + " 行";
         }
         return err;
     }

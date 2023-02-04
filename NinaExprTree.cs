@@ -27,7 +27,7 @@ class NinaExprTree {
         if (_n == 0 && l != null) return l;
         else if (_n == 1 && r != null) return r;
         else {
-            NinaError.error("unexpected error.", 101253);
+            NinaError.error("莫名其妙的错误.", 101253);
             return null;
         }
     }
@@ -36,7 +36,7 @@ class NinaExprTree {
         else if (r != null) return r;
         else if (l != null) return l;
         else {
-            NinaError.error("unexpected error.", 613545);
+            NinaError.error("莫名其妙的错误.", 613545);
             return null;
         }
     }
@@ -50,7 +50,7 @@ class NinaExprTree {
             r = null;
         }
         else {
-            NinaError.error("unexpected error.", 164914);
+            NinaError.error("莫名其妙的错误.", 164914);
         }
     }
     public void remove(NinaExprTree _v) {
@@ -59,7 +59,7 @@ class NinaExprTree {
         else if (r == _v)
             remove(1);
         else
-            NinaError.error("unexpected error.", 200329);
+            NinaError.error("莫名其妙的错误.", 200329);
     }
     public void append(NinaExprTree _tree) {
         if (l == null)
@@ -67,7 +67,7 @@ class NinaExprTree {
         else if (r == null)
             r = _tree;
         else
-            NinaError.error("unexpected error.", 944907);
+            NinaError.error("莫名其妙的错误.", 944907);
         
         if (_tree.boss != null)
             _tree.boss.remove(_tree);
@@ -87,7 +87,7 @@ class NinaExprTree {
             r = _v;
         }
         else {
-            NinaError.error("unexpected error.", 496672);
+            NinaError.error("莫名其妙的错误.", 496672);
         }
     }
     public void replace(NinaExprTree _ov, NinaExprTree _nv) {
@@ -96,7 +96,7 @@ class NinaExprTree {
         else if (r == _ov)
             replace(1, _nv);
         else
-            NinaError.error("unexpected error.", 157782);
+            NinaError.error("莫名其妙的错误.", 157782);
     }
     public void abdicate(NinaExprTree _tree) {
         if (boss != null)
@@ -137,13 +137,15 @@ class NinaExprTree {
                     );
             }
             else {
-                NinaError.error("unexpected token.", 119832,
-                    new NinaErrorPosition(block.file, block.line, block.col));
+                NinaError.error(
+                    "无效的表达式.", 119832,
+                    new NinaErrorPosition(block.file, block.line, block.col)
+                );
             }
         }
         else if (type == NinaExprTreeType.Operator) {
             if (l == null || r == null) {
-                NinaError.error("unexpected error.", 584489);
+                NinaError.error("莫名其妙的错误.", 584489);
             }
             else if (block.val_op_unary == false) {
                 ANinaASTExpression node_l = l!.compile(false);
@@ -159,9 +161,9 @@ class NinaExprTree {
                     if ((list_l == null && expr_l == null)
                             || compiledBlock_r == null) {
                         NinaError.error(
-                            "invalid right-hand expression " +
-                            "for inline lambda creation operator.", 186009,
-                            new NinaErrorPosition(block.file, block.line, block.col));
+                            "无效的匿名函数创建表达式.", 186009,
+                            new NinaErrorPosition(block.file, block.line, block.col)
+                        );
                     }
                     else {
                         NinaASTSuperListExpression plist
@@ -178,15 +180,17 @@ class NinaExprTree {
                 }
                 else if (compiledBlock_l != null || compiledBlock_r != null) {
                     NinaError.error(
-                        "unexpected block expression " +
-                        "for the specific operator.",
+                        "表达式的两侧发现无效的语句块表达式.",
                         201919,
-                        new NinaErrorPosition(block.file, block.line, block.col));
+                        new NinaErrorPosition(block.file, block.line, block.col)
+                    );
                 }
                 else if (block.val_op == NinaOperatorType.Com) {
                     if (_isRoot) {
-                        NinaError.error("unexpected list expression.", 924405,
-                            new NinaErrorPosition(block.file, block.line, block.col));
+                        NinaError.error(
+                            "无效的列表表达式.", 924405,
+                            new NinaErrorPosition(block.file, block.line, block.col)
+                        );
                     }
                     else if (list_l != null && list_r != null) {
                         list_l.list.AddRange(list_r.list);
@@ -218,17 +222,19 @@ class NinaExprTree {
                             );
                     }
                     else {
-                        NinaError.error("invalid list expression.", 301923,
-                            new NinaErrorPosition(block.file, block.line, block.col));
+                        NinaError.error(
+                            "无效的列表表达式.", 301923,
+                            new NinaErrorPosition(block.file, block.line, block.col)
+                        );
                     }
                 }
                 else if (block.val_op == NinaOperatorType.BraL) {
                     if (expr_l == null) {
                         NinaError.error(
-                            "invalid left-hand expression " +
-                            "for function calling operator.",
+                            "函数调用表达式的左侧表达式无效.",
                             593929,
-                            new NinaErrorPosition(block.file, block.line, block.col));
+                            new NinaErrorPosition(block.file, block.line, block.col)
+                        );
                     }
                     else if (list_r != null) {
                         return
@@ -255,18 +261,18 @@ class NinaExprTree {
                     }
                     else {
                         NinaError.error(
-                            "invalid right-hand expression " +
-                            "for function calling operator.",
+                            "函数调用表达式的右侧表达式无效.",
                             194021,
-                            new NinaErrorPosition(block.file, block.line, block.col));
+                            new NinaErrorPosition(block.file, block.line, block.col)
+                        );
                     }
                 }
                 else if (expr_l == null || expr_r == null) {
                     NinaError.error(
-                        "unexpected expression " +
-                        "for the specific operator.",
+                        "表达式两侧的表达式无效.",
                         249439,
-                        new NinaErrorPosition(block.file, block.line, block.col));
+                        new NinaErrorPosition(block.file, block.line, block.col)
+                    );
                 }
                 else if (block.val_op == NinaOperatorType.MBraL) {
                     return
@@ -282,10 +288,10 @@ class NinaExprTree {
                         = expr_r as NinaASTIdentifierExpression;
                     if (id == null) {
                         NinaError.error(
-                            "invalid right-hand expression " +
-                            "for member access operator.",
+                            "成员访问语法糖表达式的右侧表达式无效.",
                             595886,
-                            new NinaErrorPosition(block.file, block.line, block.col));
+                            new NinaErrorPosition(block.file, block.line, block.col)
+                        );
                     }
                     else {
                         return
@@ -349,10 +355,10 @@ class NinaExprTree {
                 if (block.val_op == NinaOperatorType.Object) {
                     if (compiledBlock == null) {
                         NinaError.error(
-                            "invalid right-hand expression " +
-                            "for object creation operator.",
+                            "对象创建表达式的右侧表达式无效.",
                             301529,
-                            new NinaErrorPosition(block.file, block.line, block.col));
+                            new NinaErrorPosition(block.file, block.line, block.col)
+                        );
                     }
                     return
                         new NinaASTObjectExpression(
@@ -382,18 +388,18 @@ class NinaExprTree {
                     }
                     else {
                         NinaError.error(
-                            "invalid right-hand expression " +
-                            "for array creation operator.",
+                            "数组创建表达式的右侧表达式无效.",
                             103928,
-                            new NinaErrorPosition(block.file, block.line, block.col));
+                            new NinaErrorPosition(block.file, block.line, block.col)
+                        );
                     }
                 }
                 else if (expr == null) {
                     NinaError.error(
-                        "invalid right-hand expression " +
-                        "for unary operator.",
+                        "单目运算表达式的右侧表达式无效.",
                         113938,
-                        new NinaErrorPosition(block.file, block.line, block.col));
+                        new NinaErrorPosition(block.file, block.line, block.col)
+                    );
                 }
                 else if (block.val_op == NinaOperatorType.At) {
                     node.annos.Add(NinaConstsProviderUtil.NINA_ANNO_SPECIALARG);
@@ -422,7 +428,7 @@ class NinaExprTree {
             }
         }
         else {
-            NinaError.error("unexpected error.", 214128);
+            NinaError.error("莫名其妙的错误.", 214128);
         }
 
         return new NinaASTLiteralExpression(pos);

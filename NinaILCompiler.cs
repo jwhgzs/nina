@@ -21,7 +21,7 @@ static class NinaILCompiler {
             case "object":
                 return typeof(NinaDataObject).GetConstructors()[0];
         }
-        NinaError.error("unexpected error.", 256651);
+        NinaError.error("莫名其妙的错误.", 256651);
         return null !;
     }
     public static MethodInfo? compile_innerFunc(string _func) {
@@ -100,8 +100,7 @@ static class NinaILCompiler {
                 _g.Emit(OpCodes.Ldsfld, from_glob_const);
             }
             else {
-                NinaError.error("undefined variable.",
-                    997023, _id.pos);
+                NinaError.error("未定义的变量.", 997023, _id.pos);
             }
         }
         else {
@@ -115,8 +114,10 @@ static class NinaILCompiler {
                     typeof(List<object>).GetProperty("Item")!.GetSetMethod() !);
             }
             else if (_in_consts.Contains(idname)) {
-                NinaError.error("invalid assignment to constant.",
-                    139012, _id.pos);
+                NinaError.error(
+                    "无法为常量重新赋值.",
+                    139012, _id.pos
+                );
             }
             else if (_outs.TryGetValue(idname,
                     out (FieldInfo, int) from_outs)) {
@@ -132,19 +133,22 @@ static class NinaILCompiler {
                 );
             }
             else if (_out_consts.TryGetValue(idname, out _)) {
-                NinaError.error("invalid assignment to constant.",
-                    491293, _id.pos);
+                NinaError.error(
+                    "无法为常量重新赋值.",
+                    491293, _id.pos
+                );
             }
             else if (_globs.TryGetValue(idname, out FieldInfo? from_glob)) {
                 _g.Emit(OpCodes.Stsfld, from_glob);
             }
             else if (_glob_consts.TryGetValue(idname, out _)) {
-                NinaError.error("invalid assignment to constant.",
-                    493929, _id.pos);
+                NinaError.error(
+                    "无法为常量重新赋值.",
+                    493929, _id.pos
+                );
             }
             else {
-                NinaError.error("undefined variable.",
-                    194161, _id.pos);
+                NinaError.error("未定义的变量.", 194161, _id.pos);
             }
         }
         
@@ -173,7 +177,7 @@ static class NinaILCompiler {
                 _g.Emit(OpCodes.Ldnull);
             }
             else {
-                NinaError.error("unexpected error.", 120591);
+                NinaError.error("莫名其妙的错误.", 120591);
             }
         }
         else if (_expr is NinaASTIdentifierExpression id) {
@@ -510,7 +514,7 @@ static class NinaILCompiler {
                     );
                 }
                 else {
-                    NinaError.error("invalid lvalue.", 807500, binary.pos);
+                    NinaError.error("赋值表达式的左手值无效.", 807500, binary.pos);
                 }
             }
             else if (binary.type == NinaOperatorType.MBraL) {
@@ -702,9 +706,9 @@ static class NinaILCompiler {
                 else {
                     if (args.Count != inner!.GetParameters().Count()) {
                         NinaError.error(
-                            "you must line up your arguments " +
-                            "when calling built-in functions.",
-                            645668, binary.pos);
+                            "调用内置函数时必须对齐实参.",
+                            645668, binary.pos
+                        );
                     }
                     for (int i = 0; i < args.Count; ++ i) {
                         ANinaASTExpression v = args[i];
@@ -731,7 +735,7 @@ static class NinaILCompiler {
                 }
             }
             else {
-                NinaError.error("unexpected error.", 220291);
+                NinaError.error("莫名其妙的错误.", 220291);
             }
         }
         else if (_expr is NinaASTObjectExpression objcr) {
@@ -788,6 +792,7 @@ static class NinaILCompiler {
                             _g.Emit(OpCodes.Ldc_I4_1);
                         else
                             _g.Emit(OpCodes.Ldc_I4_0);
+                        _g.Emit(OpCodes.Ldc_I4_1);
                         _g.EmitCall(
                             opcode: OpCodes.Call,
                             methodInfo:
@@ -835,6 +840,7 @@ static class NinaILCompiler {
                         _ss: _ss
                     );
                     _g.Emit(OpCodes.Ldc_I4_0);
+                    _g.Emit(OpCodes.Ldc_I4_0);
                     _g.EmitCall(
                         opcode: OpCodes.Call,
                         methodInfo:
@@ -845,11 +851,11 @@ static class NinaILCompiler {
                 }
             }
             else {
-                NinaError.error("unexpected error.", 293012);
+                NinaError.error("莫名其妙的错误.", 293012);
             }
         }
         else {
-            NinaError.error("unexpected error.", 844249);
+            NinaError.error("莫名其妙的错误.", 844249);
         }
 
         postable(_pos_table, _ss, _g, _expr);
@@ -1101,7 +1107,7 @@ static class NinaILCompiler {
                 _g.Emit(OpCodes.Br, (Label) _label_continue !);
             }
             else {
-                NinaError.error("unexpected error.", 694817);
+                NinaError.error("莫名其妙的错误.", 694817);
             }
         }
         else if (_stm is NinaASTTryStatement trys) {
@@ -1158,7 +1164,7 @@ static class NinaILCompiler {
             _g.EndExceptionBlock();
         }
         else {
-            NinaError.error("unexpected error.", 121055);
+            NinaError.error("莫名其妙的错误.", 121055);
         }
 
         postable(_pos_table, _ss, _g, _stm);
@@ -1200,8 +1206,7 @@ static class NinaILCompiler {
             mg.Emit(OpCodes.Beq, label);
             mg.Emit(
                 OpCodes.Ldstr,
-                "you must line up your arguments " +
-                "when calling built-in functions."
+                "调用内置函数时必须对齐实参."
             );
             mg.Emit(OpCodes.Ldc_I4, 294012);
             mg.Emit(OpCodes.Call, typeof(NinaAPIUtil).GetMethod("error") !);
@@ -1230,7 +1235,7 @@ static class NinaILCompiler {
             NinaASTPlaceholder ph 
                 = new NinaASTPlaceholder(
                     new NinaErrorPosition(
-                        "[Nina Built-in Function: " + v.Name + "]",
+                        "[内置函数: " + v.Name + "]",
                         - 2, - 2
                     )
                 );

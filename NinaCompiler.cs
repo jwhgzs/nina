@@ -69,22 +69,34 @@ static class NinaCompiler {
 
                 if (buf == null && ! isUnary && ! isGrouperL && ! isScoperL) {
                     if (! isEof)
-                        NinaError.error("invalid expression.", 651968,
-                            new NinaErrorPosition(v!.Value.file, v!.Value.line,
-                                v!.Value.col));
+                        NinaError.error(
+                            "无效的表达式.", 651968,
+                            new NinaErrorPosition(
+                                v!.Value.file, v!.Value.line,
+                                v!.Value.col
+                            )
+                        );
                     if (buf_op != null)
-                        NinaError.error("invalid expression.", 328298,
-                            new NinaErrorPosition(buf_op.Value.file,
-                                buf_op.Value.line, buf_op.Value.col));
+                        NinaError.error(
+                            "无效的表达式.", 328298,
+                            new NinaErrorPosition(
+                                buf_op.Value.file,
+                                buf_op.Value.line, buf_op.Value.col
+                            )
+                        );
                     else
-                        NinaError.error("unexpected error.", 425707);
+                        NinaError.error("莫名其妙的错误.", 425707);
                 }
                 
                 if (isUnary) {
                     if (buf != null) {
-                        NinaError.error("invalid unary expression.", 355915,
-                            new NinaErrorPosition(v!.Value.file, v!.Value.line,
-                                v!.Value.col));
+                        NinaError.error(
+                            "无效的单目运算符.", 355915,
+                            new NinaErrorPosition(
+                                v!.Value.file, v!.Value.line,
+                                v!.Value.col
+                            )
+                        );
                     }
                     else {
                         buf = new NinaExprTree(true);
@@ -113,9 +125,12 @@ static class NinaCompiler {
                 }
                 else if (tree == null) {
                     if (buf_op != null) {
-                        NinaError.error("invalid expression.", 357258,
-                            new NinaErrorPosition(buf_op.Value.file,
-                                buf_op.Value.line, buf_op.Value.col));
+                        NinaError.error("无效的表达式.", 357258,
+                            new NinaErrorPosition(
+                                buf_op.Value.file,
+                                buf_op.Value.line, buf_op.Value.col
+                            )
+                        );
                     }
                     else {
                         tree = buf;
@@ -153,7 +168,7 @@ static class NinaCompiler {
                         while ((p = p.boss) != null);
 
                         if (! isHandled) {
-                            NinaError.error("unexpected error.", 669365);
+                            NinaError.error("莫名其妙的错误.", 669365);
                         }
                     }
                 }
@@ -177,9 +192,13 @@ static class NinaCompiler {
                         }
                         else if (v!.Value.val_op == NinaOperatorType.BraR
                                 || v!.Value.val_op == NinaOperatorType.MBraR) {
-                            NinaError.error("unpaired brackets.", 761864,
-                                new NinaErrorPosition(v!.Value.file,
-                                    v!.Value.line, v!.Value.col));
+                            NinaError.error(
+                                "不成对的括号.", 761864,
+                                new NinaErrorPosition(
+                                    v!.Value.file,
+                                    v!.Value.line, v!.Value.col
+                                )
+                            );
                         }
                     }
                     else {
@@ -192,8 +211,10 @@ static class NinaCompiler {
             }
             else {
                 if (buf != null) {
-                    NinaError.error("unexpected token.", 481044,
-                        new NinaErrorPosition(v!.Value.file, v!.Value.line, v!.Value.col));
+                    NinaError.error(
+                        "无效的表达式.", 481044,
+                        new NinaErrorPosition(v!.Value.file, v!.Value.line, v!.Value.col)
+                    );
                 }
                 buf = new NinaExprTree((NinaCodeBlock) v !);
             }
@@ -221,9 +242,11 @@ static class NinaCompiler {
             NinaCodeBlock v = _blocks[_i];
             if (v.val_sy == NinaSymbolType.CBraR) {
                 if (_scope == NinaScopeType.Root) {
-                    NinaError.error("unpaired curly-brackets.",
+                    NinaError.error(
+                        "不成对的花括号.",
                         316852,
-                        new NinaErrorPosition(v.file, v.line, v.col));
+                        new NinaErrorPosition(v.file, v.line, v.col)
+                    );
                 }
                 else {
                     if (_cscope == NinaScopeType.Function) {
@@ -270,17 +293,21 @@ static class NinaCompiler {
                                     ? (expr.block.val_op != NinaOperatorType.Equ
                                         || expr.l!.block.type != NinaCodeBlockType.Identifier)
                                     : expr.block.type != NinaCodeBlockType.Identifier)) {
-                                NinaError.error("invalid variable declaration statement.",
+                                NinaError.error(
+                                    "无效的变量定义语句.",
                                     845706,
-                                    new NinaErrorPosition(v.file, v.line, v.col));
+                                    new NinaErrorPosition(v.file, v.line, v.col)
+                                );
                             }
                             else if (expr.type != NinaExprTreeType.Data) {
                                 ANinaASTExpression? val
                                     = expr.r!.compile() as ANinaASTExpression;
                                 if (val == null) {
-                                    NinaError.error("invalid variable initialization statement.",
+                                    NinaError.error(
+                                        "无效的变量初始化表达式.",
                                         123533,
-                                        new NinaErrorPosition(v.file, v.line, v.col));
+                                        new NinaErrorPosition(v.file, v.line, v.col)
+                                    );
                                 }
                                 else {
                                     string id = NinaCompilerUtil.format_identifier(
@@ -304,9 +331,11 @@ static class NinaCompiler {
                                 && _blocks[_i].val_sy != NinaSymbolType.Sem);
                     }
                     else {
-                        NinaError.error("empty variable declaration statement.",
+                        NinaError.error(
+                            "变量定义语句不能为空.",
                             952990,
-                            new NinaErrorPosition(v.file, v.line, v.col));
+                            new NinaErrorPosition(v.file, v.line, v.col)
+                        );
                     }
 
                     block.stms.Add(vars);
@@ -316,15 +345,19 @@ static class NinaCompiler {
                         || v.val_kw == NinaKeywordType.Elseif
                         || v.val_kw == NinaKeywordType.While) {
                     if (_i + 1 > _blocks.Count - 1) {
-                        NinaError.error("invalid logical control statement.",
+                        NinaError.error(
+                            "无效的逻辑控制语句.",
                             611922,
-                            new NinaErrorPosition(v.file, v.line, v.col));
+                            new NinaErrorPosition(v.file, v.line, v.col)
+                        );
                     }
                     if (v.val_kw != NinaKeywordType.Else
                             && _blocks[++ _i].val_op != NinaOperatorType.BraL) {
-                        NinaError.error("invalid logical control statement.",
+                        NinaError.error(
+                            "无效的逻辑控制语句.",
                             390479,
-                            new NinaErrorPosition(v.file, v.line, v.col));
+                            new NinaErrorPosition(v.file, v.line, v.col)
+                        );
                     }
 
                     NinaExprTree? tree
@@ -345,14 +378,18 @@ static class NinaCompiler {
                             : _blocks[++ _i];
                     if (cBraL == null
                             || cBraL.Value.val_sy != NinaSymbolType.CBraL) {
-                        NinaError.error("invalid logical control statement.",
+                        NinaError.error(
+                            "无效的逻辑控制语句.",
                             885155,
-                            new NinaErrorPosition(v.file, v.line, v.col));
+                            new NinaErrorPosition(v.file, v.line, v.col)
+                        );
                     }
                     else if (v.val_kw != NinaKeywordType.Else && expr == null) {
-                        NinaError.error("invalid logical control statement.",
+                        NinaError.error(
+                            "无效的逻辑控制语句.",
                             723745,
-                            new NinaErrorPosition(v.file, v.line, v.col));
+                            new NinaErrorPosition(v.file, v.line, v.col)
+                        );
                     }
                     else {
                         NinaErrorPosition tmpPos
@@ -407,22 +444,28 @@ static class NinaCompiler {
                         }
                         else {
                             if (block.stms.Count == 0) {
-                                NinaError.error("unexpected logical clause statement.",
+                                NinaError.error(
+                                    "无效的逻辑控制语句.",
                                     898170,
-                                    new NinaErrorPosition(v.file, v.line, v.col));
+                                    new NinaErrorPosition(v.file, v.line, v.col)
+                                );
                             }
                             NinaASTIfStatement? main
                                 = block.stms.Last() as NinaASTIfStatement;
                             if (main == null) {
-                                NinaError.error("unexpected logical clause statement.",
+                                NinaError.error(
+                                    "无效的逻辑控制语句.",
                                     606056,
-                                    new NinaErrorPosition(v.file, v.line, v.col));
+                                    new NinaErrorPosition(v.file, v.line, v.col)
+                                );
                             }
                             else if (v.val_kw == NinaKeywordType.Else) {
                                 if (main.block_else != null) {
-                                    NinaError.error("unexpected logical clause statement.",
+                                    NinaError.error(
+                                        "没有主句的 else 从句.",
                                         432612,
-                                        new NinaErrorPosition(v.file, v.line, v.col));
+                                        new NinaErrorPosition(v.file, v.line, v.col)
+                                    );
                                 }
                                 buf_elses.Add(
                                     (
@@ -444,9 +487,11 @@ static class NinaCompiler {
                             }
                             else {
                                 if (! allow_elseif) {
-                                    NinaError.error("unexpected elseif clause statement.",
+                                    NinaError.error(
+                                        "没有主句的 elseif 从句.",
                                         299924,
-                                        new NinaErrorPosition(v.file, v.line, v.col));
+                                        new NinaErrorPosition(v.file, v.line, v.col)
+                                    );
                                 }
                                 buf_elses.Add(
                                     (expr !, body)
@@ -466,8 +511,10 @@ static class NinaCompiler {
                                 expr_raw.pos
                             );
                     if (_i < _blocks.Count && _blocks[_i].val_sy != NinaSymbolType.Sem) {
-                        NinaError.error("invalid return statement.", 916850,
-                            new NinaErrorPosition(v.file, v.line, v.col));
+                        NinaError.error(
+                            "无效的 return 语句.", 916850,
+                            new NinaErrorPosition(v.file, v.line, v.col)
+                        );
                     }
                     else {
                         block.stms.Add(
@@ -484,8 +531,10 @@ static class NinaCompiler {
                     if ((_i + 1 <= _blocks.Count - 1
                             && _blocks[++ _i].val_sy != NinaSymbolType.Sem)
                             || (_scope & NinaScopeType.While) != NinaScopeType.While) {
-                        NinaError.error("invalid loop escape statement.", 327023,
-                            new NinaErrorPosition(v.file, v.line, v.col));
+                        NinaError.error(
+                            "无效的循环控制语句.", 327023,
+                            new NinaErrorPosition(v.file, v.line, v.col)
+                        );
                     }
                     else {
                         block.stms.Add(
@@ -500,17 +549,21 @@ static class NinaCompiler {
                 }
                 else if (v.val_kw == NinaKeywordType.Func) {
                     if (_i + 3 > _blocks.Count() - 1) {
-                        NinaError.error("invalid named function declaration statement.",
+                        NinaError.error(
+                            "无效的函数定义语法糖语句.",
                             894659,
-                            new NinaErrorPosition(v.file, v.line, v.col));
+                            new NinaErrorPosition(v.file, v.line, v.col)
+                        );
                     }
                     NinaCodeBlock name = _blocks[++ _i];
                     NinaCodeBlock braL = _blocks[++ _i];
                     if (name.type != NinaCodeBlockType.Identifier
                             || braL.val_op != NinaOperatorType.BraL) {
-                        NinaError.error("invalid named function declaration statement.",
+                        NinaError.error(
+                            "无效的函数定义语法糖语句.",
                             526905,
-                            new NinaErrorPosition(v.file, v.line, v.col));
+                            new NinaErrorPosition(v.file, v.line, v.col)
+                        );
                     }
                     NinaASTSuperListExpression plist = new NinaASTSuperListExpression(
                         new NinaErrorPosition(
@@ -533,17 +586,21 @@ static class NinaCompiler {
                                     ? (expr.block.val_op != NinaOperatorType.Equ
                                         || expr.l!.block.type != NinaCodeBlockType.Identifier)
                                     : expr.block.type != NinaCodeBlockType.Identifier)) {
-                                NinaError.error("invalid function declaration statement.",
+                                NinaError.error(
+                                    "无效的形参列表表达式.",
                                     635117,
-                                    new NinaErrorPosition(v.file, v.line, v.col));
+                                    new NinaErrorPosition(v.file, v.line, v.col)
+                                );
                             }
                             else if (expr.type != NinaExprTreeType.Data) {
                                 ANinaASTExpression? val
                                     = expr.r!.compile() as ANinaASTExpression;
                                 if (val == null) {
-                                    NinaError.error("invalid function initialization statement.",
+                                    NinaError.error(
+                                        "无效的形参初始化表达式.",
                                         116820,
-                                        new NinaErrorPosition(v.file, v.line, v.col));
+                                        new NinaErrorPosition(v.file, v.line, v.col)
+                                    );
                                 }
                                 else {
                                     plist.list.Add(
@@ -559,9 +616,11 @@ static class NinaCompiler {
                             }
                             else {
                                 if (comfortable) {
-                                    NinaError.error("invalid function parameter initialization.",
+                                    NinaError.error(
+                                        "无效的形参初始化表达式.",
                                         535545,
-                                        new NinaErrorPosition(v.file, v.line, v.col));
+                                        new NinaErrorPosition(v.file, v.line, v.col)
+                                    );
                                 }
                                 plist.list.Add(
                                     (
@@ -582,15 +641,19 @@ static class NinaCompiler {
                     if (_i + 1 <= _blocks.Count - 1) {
                         NinaCodeBlock cBraL = _blocks[++ _i];
                         if (cBraL.val_sy != NinaSymbolType.CBraL) {
-                            NinaError.error("invalid function initialization statement.",
+                            NinaError.error(
+                                "无效的函数定义语法糖语句.",
                                 985609,
-                                new NinaErrorPosition(v.file, v.line, v.col));
+                                new NinaErrorPosition(v.file, v.line, v.col)
+                            );
                         }
                     }
                     else {
-                        NinaError.error("invalid function initialization statement.",
+                        NinaError.error(
+                            "无效的函数定义语法糖语句.",
                             252671,
-                            new NinaErrorPosition(v.file, v.line, v.col));
+                            new NinaErrorPosition(v.file, v.line, v.col)
+                        );
                     }
                     
                     NinaASTBlockExpression body = compile(
@@ -632,9 +695,11 @@ static class NinaCompiler {
                         || v.val_kw == NinaKeywordType.Catch) {
                     if (_i + 1 > _blocks.Count - 1
                             || _blocks[++ _i].val_sy != NinaSymbolType.CBraL) {
-                        NinaError.error("invalid exception catcher statement.",
+                        NinaError.error(
+                            "无效的异常捕获语句.",
                             352903,
-                            new NinaErrorPosition(v.file, v.line, v.col));
+                            new NinaErrorPosition(v.file, v.line, v.col)
+                        );
                     }
                     NinaASTBlockExpression body
                         = compile(
@@ -655,9 +720,11 @@ static class NinaCompiler {
                         if (block.stms.Count == 0
                                 || block.stms.Last() is not NinaASTTryStatement main
                                 || main.block_catch != null) {
-                            NinaError.error("invalid exception catcher statement.",
+                            NinaError.error(
+                                "无效的异常捕获语句.",
                                 239021,
-                                new NinaErrorPosition(v.file, v.line, v.col));
+                                new NinaErrorPosition(v.file, v.line, v.col)
+                            );
                         }
                         else {
                             main.block_catch = body;
@@ -665,9 +732,11 @@ static class NinaCompiler {
                     }
                 }
                 else {
-                    NinaError.error("unexpected error.",
+                    NinaError.error(
+                        "莫名其妙的错误.",
                         284747,
-                        new NinaErrorPosition(v.file, v.line, v.col));
+                        new NinaErrorPosition(v.file, v.line, v.col)
+                    );
                 }
             }
             else {

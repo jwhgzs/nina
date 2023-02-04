@@ -9,8 +9,6 @@ using System.Diagnostics;
 namespace Nina;
 
 public class NinaDataArray: List<object> {
-    public Dictionary<int, bool> my_consts
-        = new Dictionary<int, bool>();
     public NinaDataArray(): base() {}
     public NinaDataArray(List<object> _src)
             : base(_src) {}
@@ -38,7 +36,7 @@ public static class NinaAPIUtil {
         else if (_o is long l)
             return l != 0;
         else
-            NinaError.error("invalid convert to numeric.", 123901);
+            NinaError.error("无法进行到 Number 的类型转换.", 123901);
         return false;
     }
     public static double toNumber(object _o) {
@@ -55,7 +53,7 @@ public static class NinaAPIUtil {
         else if (_o is long l)
             return l;
         else
-            NinaError.error("invalid conversion to numeric.", 412910);
+            NinaError.error("无法进行到 Number 的类型转换.", 412910);
         return 0;
     }
     public static string toTypeDesc(object _o) {
@@ -192,45 +190,40 @@ public static class NinaAPIUtil {
             return obj.ContainsKey(key) ? obj[key] : null !;
         }
         else {
-            NinaError.error("invalid target for member access operation.", 626768);
+            NinaError.error("成员访问的操作对象无效.", 626768);
         }
         return null !;
     }
     public static object member_init(
-            object _obj, object _key, object _val, int _isConst) {
+            object _obj, object _key, object _val, int _isConst,
+            int _allowSetConst) {
         if (_obj is NinaDataArray arr) {
             int key = (int) toNumber(_key);
-            if (arr.my_consts.ContainsKey(key)) {
-                NinaError.error(
-                    "invalid assignment to constant member.",
-                    594943);
-            }
             arr.EnsureCapacity(key + 1);
             while (arr.Count < key + 1)
                 arr.Add(null !);
             arr[key] = _val;
-            if (_isConst != 0)
-                arr.my_consts[key] = true;
         }
         else if (_obj is NinaDataObject obj) {
             string key = toString(_key);
-            if (obj.my_consts.ContainsKey(key)) {
+            if (obj.my_consts.ContainsKey(key) && _allowSetConst == 0) {
                 NinaError.error(
-                    "invalid assignment to a constant member.",
-                    794922);
+                    "无法给常量成员重新赋值.",
+                    794922
+                );
             }
             obj[key] = _val;
             if (_isConst != 0)
                 obj.my_consts[key] = true;
         }
         else {
-            NinaError.error("invalid target to access member.", 426694);
+            NinaError.error("成员赋值的操作对象无效.", 426694);
         }
         return _val;
     }
     public static object member_set(
             object _obj, object _key, object _val) {
-        return member_init(_obj, _key, _val, 0);
+        return member_init(_obj, _key, _val, 0, 0);
     }
     public static void error(string _msg, int _uniqueCode) {
         NinaError.error(_msg, _uniqueCode);
@@ -324,18 +317,6 @@ public static class NinaAPIUtil {
             ["code"] = convert_ex_resolve_code(msg)
         };
     }
-    public static object func_invoke(dynamic _func, object[] _params) {
-        try {
-            return _func.func(_params);
-        }
-        catch (TargetInvocationException ex) {
-            NinaError.error(
-                "error when calling function:\n"
-                    + NinaError.trim_header(ex.InnerException!.Message),
-                139031);
-        }
-        return null !;
-    }
 }
 
 public static class NinaAPI {
@@ -348,15 +329,16 @@ public static class NinaAPI {
         string code = NinaAPIUtil.toString(_code);
         try {
             return NinaCore.execute(
-                "[Dynamic Codes: " + Guid.NewGuid().ToString("N") + "]",
+                "[动态代码 " + Guid.NewGuid().ToString("N") + "]",
                 code, _arg
             ) !;
         }
         catch (TargetInvocationException ex) {
             NinaError.error(
-                "error when evaluating:\n"
+                "在执行动态代码时出现错误:\n"
                     + NinaError.trim_header(ex.InnerException!.Message),
-                352982);
+                352982
+            );
         }
         return null !;
     }
@@ -498,14 +480,14 @@ public static class NinaAPI {
     public static object array_length(object _arr) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
-            NinaError.error("invalid array to operate.", 796923);
+            NinaError.error("操作的数组无效.", 796923);
         }
         return (double) arr!.Count;
     }
     public static object array_append(object _arr, object _item) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
-            NinaError.error("invalid array to operate.", 120312);
+            NinaError.error("操作的数组无效.", 120312);
         }
         arr!.Add(_item);
         return true;
@@ -514,7 +496,7 @@ public static class NinaAPI {
         NinaDataArray? arr = _arr as NinaDataArray;
         int n = (int) NinaAPIUtil.toNumber(_n);
         if (arr == null) {
-            NinaError.error("invalid array to operate.", 102914);
+            NinaError.error("操作的数组无效.", 102914);
         }
         try {
             arr!.Insert(n, _item);
@@ -527,7 +509,7 @@ public static class NinaAPI {
     public static object array_pop(object _arr) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
-            NinaError.error("invalid array to operate.", 593192);
+            NinaError.error("操作的数组无效.", 593192);
         }
         try {
             arr!.RemoveAt(arr.Count - 1);
@@ -541,7 +523,7 @@ public static class NinaAPI {
         NinaDataArray? arr = _arr as NinaDataArray;
         int n = (int) NinaAPIUtil.toNumber(_n);
         if (arr == null) {
-            NinaError.error("invalid array to operate.", 605912);
+            NinaError.error("操作的数组无效.", 605912);
         }
         try {
             arr!.RemoveAt(n);
@@ -554,7 +536,7 @@ public static class NinaAPI {
     public static object array_clear(object _arr) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
-            NinaError.error("invalid array to operate.", 491021);
+            NinaError.error("操作的数组无效.", 491021);
         }
         arr!.Clear();
         return true;
@@ -562,7 +544,7 @@ public static class NinaAPI {
     public static object array_find(object _arr, object _item) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
-            NinaError.error("invalid array to operate.", 701901);
+            NinaError.error("操作的数组无效.", 701901);
         }
         for (int i = 0; i < arr!.Count; ++ i) {
             if (NinaAPIUtil.opLEqu_bool(arr![i], _item)) {
@@ -574,7 +556,7 @@ public static class NinaAPI {
     public static object array_find_last(object _arr, object _item) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
-            NinaError.error("invalid array to operate.", 249931);
+            NinaError.error("操作的数组无效.", 249931);
         }
         for (int i = arr!.Count - 1; i >= 0; -- i) {
             if (NinaAPIUtil.opLEqu_bool(arr![i], _item)) {
@@ -595,7 +577,7 @@ public static class NinaAPI {
     public static object array_to_json(object _arr) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
-            NinaError.error("invalid array to operate.", 120491);
+            NinaError.error("操作的数组无效.", 120491);
         }
         try {
             return
@@ -625,7 +607,7 @@ public static class NinaAPI {
     public static object object_length(object _obj) {
         NinaDataObject? obj = _obj as NinaDataObject;
         if (obj == null) {
-            NinaError.error("invalid object to operate.", 796923);
+            NinaError.error("操作的对象无效.", 796923);
         }
         return (double) obj!.Count;
     }
@@ -633,7 +615,7 @@ public static class NinaAPI {
         NinaDataObject? obj = _obj as NinaDataObject;
         string key = NinaAPIUtil.toString(_key);
         if (obj == null) {
-            NinaError.error("invalid object to operate.", 123091);
+            NinaError.error("操作的对象无效.", 123091);
         }
         return obj!.ContainsKey(key);
     }
@@ -641,7 +623,7 @@ public static class NinaAPI {
         NinaDataObject? obj = _obj as NinaDataObject;
         string item = NinaAPIUtil.toString(_item);
         if (obj == null) {
-            NinaError.error("invalid object to operate.", 190341);
+            NinaError.error("操作的对象无效.", 190341);
         }
         for (int i = 0; i < obj!.Count; ++ i) {
             var (k, v) = obj.ElementAt(i);
@@ -655,7 +637,7 @@ public static class NinaAPI {
         NinaDataObject? obj = _obj as NinaDataObject;
         string item = NinaAPIUtil.toString(_item);
         if (obj == null) {
-            NinaError.error("invalid object to operate.", 765402);
+            NinaError.error("操作的对象无效.", 765402);
         }
         for (int i = obj!.Count - 1; i >= 0; ++ i) {
             var (k, v) = obj.ElementAt(i);
@@ -669,14 +651,14 @@ public static class NinaAPI {
         NinaDataObject? obj = _obj as NinaDataObject;
         string key = NinaAPIUtil.toString(_key);
         if (obj == null) {
-            NinaError.error("invalid object to operate.", 790422);
+            NinaError.error("操作的对象无效.", 790422);
         }
         return obj!.Remove(key);
     }
     public static object object_clear(object _obj) {
         NinaDataObject? obj = _obj as NinaDataObject;
         if (obj == null) {
-            NinaError.error("invalid object to operate.", 234012);
+            NinaError.error("操作的对象无效.", 234012);
         }
         obj!.Clear();
         return true;
@@ -684,7 +666,7 @@ public static class NinaAPI {
     public static object object_to_json(object _obj) {
         NinaDataObject? obj = _obj as NinaDataObject;
         if (obj == null) {
-            NinaError.error("invalid object to operate.", 102941);
+            NinaError.error("操作的对象无效.", 102941);
         }
         try {
             return

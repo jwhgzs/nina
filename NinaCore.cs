@@ -14,7 +14,7 @@ static class NinaCore {
     public static void Main(string[] _args) {
         try {
             if (_args.Length < 1) {
-                NinaError.error("Nina needs source file's location.", 125433);
+                NinaError.error("Nina 需要源文件路径哦!", 125433);
             }
             string src = _args[0];
             string code = "";
@@ -22,7 +22,7 @@ static class NinaCore {
                 code = File.ReadAllText(src);
             }
             catch {
-                NinaError.error("Nina fails to read the source file.", 144178);
+                NinaError.error("Nina 读取源文件失败.", 144178);
             }
             execute(src, code);
         }

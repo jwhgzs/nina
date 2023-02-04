@@ -38,7 +38,7 @@ public class NinaJSONObjectConverter : JsonConverter<object> {
                             break;
                     }
                 }
-                NinaError.error("invalid JSON.", 120391);
+                NinaError.error("无效的 JSON 格式.", 120391);
                 break;
             case JsonTokenType.StartObject:
                 NinaDataObject ret2 = new NinaDataObject();
@@ -55,14 +55,14 @@ public class NinaJSONObjectConverter : JsonConverter<object> {
                                 ) !;
                             break;
                         default:
-                            NinaError.error("invalid JSON.", 193210);
+                            NinaError.error("无效的 JSON 格式.", 193210);
                             break;
                     }
                 }
-                NinaError.error("invalid JSON.", 120391);
+                NinaError.error("无效的 JSON 格式.", 120391);
                 break;
             default:
-                NinaError.error("invalid JSON.", 192312);
+                NinaError.error("无效的 JSON 格式.", 192312);
                 break;
         }
         return null;

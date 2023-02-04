@@ -1,5 +1,5 @@
 # Nina的自我介绍
-Hello! 我就是实习时长两周半的实习生——Nina！
+Hello! 我就是实习时长一个月的实习生——Nina！
 这是我的简历：
 - 姓名： Nina Script
 - 性别： 0
@@ -30,9 +30,10 @@ console_printf('time: ' + (time_now() - t1) * 1000 + ' ms');
 ```
 这是一段计算斐波那契数的Nina代码。事实上，如果把关键字`func`改为`function`，这就是一段正经的的JavaScript代码！
 
-从中还可以看出，Nina的两个基本属性：
-- 动态类型语言
-- 弱类型语言
+另外，Nina的几个基本属性：
+- 动态语言（在需要运行时才进行解释或编译）
+- 动态类型语言（类型在运行时确定和更改）
+- 弱类型语言（可隐式、自由地进行类型转换）
 
 这几点也与JavaScript完全一致！看来这对姐妹花是亲生的没错了。
 
@@ -42,4 +43,4 @@ console_printf('time: ' + (time_now() - t1) * 1000 + ' ms');
 # Nina的VSCode扩展
 Nina的语法高亮扩展在VSCode扩展商城上线了哦！直接搜“Nina”就有了！[源码 github 地址](https://github.com/jwhgzs/nina-extension)~
 
-虽然不是一个生产项目，但是加上扩展玩起来也开心一些呢~
+虽然只是一个玩乐项目，但是加上扩展玩起来也开心一些呢~
