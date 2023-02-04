@@ -1,4 +1,4 @@
-#define MODE_DEBUG
+// #define MODE_DEBUG
 
 using System.Reflection;
 

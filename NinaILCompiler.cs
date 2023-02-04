@@ -239,8 +239,7 @@ static class NinaILCompiler {
                 List<(string, ANinaASTExpression?)> plist
                     = plist_raw.list;
                 plist.Insert(
-                    0,
-                    ("this", null)
+                    0, ("this", null)
                 );
                 NinaASTBlockExpression block
                     = (binary.expr_r as NinaASTBlockExpression) !;
@@ -308,9 +307,29 @@ static class NinaILCompiler {
                 ILGenerator g = mb.GetILGenerator();
                 LocalBuilder loc_ins = g.DeclareLocal(typeof(List<object>));
                 LocalBuilder loc_in_consts = g.DeclareLocal(typeof(List<object>));
-                g.Emit(OpCodes.Newobj,
-                    typeof(List<object>).GetConstructor(new Type[0]) !);
+                int plistCount = plist.Count;
+                g.Emit(OpCodes.Ldarg_0);
                 g.Emit(OpCodes.Stloc_0);
+                LocalBuilder cCount = g.DeclareLocal(typeof(int));
+                g.Emit(OpCodes.Ldloc_0);
+                g.Emit(OpCodes.Call,
+                    typeof(List<object>).GetProperty("Count")!.GetGetMethod() !);
+                g.Emit(OpCodes.Stloc, cCount);
+                LocalBuilder dCount = g.DeclareLocal(typeof(int));
+                g.Emit(OpCodes.Ldloc, cCount);
+                g.Emit(OpCodes.Ldc_I4, plistCount);
+                g.Emit(OpCodes.Sub);
+                g.Emit(OpCodes.Stloc, dCount);
+                g.Emit(OpCodes.Ldloc, dCount);
+                g.Emit(OpCodes.Ldc_I4_0);
+                Label tmp = g.DefineLabel();
+                g.Emit(OpCodes.Blt, tmp);
+                g.Emit(OpCodes.Ldloc_0);
+                g.Emit(OpCodes.Ldc_I4, plistCount);
+                g.Emit(OpCodes.Ldloc, dCount);
+                g.Emit(OpCodes.Call,
+                    typeof(List<object>).GetMethod("RemoveRange") !);
+                g.MarkLabel(tmp);
                 g.Emit(OpCodes.Newobj,
                     typeof(List<object>).GetConstructor(new Type[0]) !);
                 g.Emit(OpCodes.Stloc_1);
@@ -318,6 +337,7 @@ static class NinaILCompiler {
                 LocalBuilder returnReg = g.DeclareLocal(typeof(object));
                 Label returnLabel = g.DefineLabel();
                 g.Emit(OpCodes.Ldloc_0);
+                g.Emit(OpCodes.Ldc_I4_0);
                 g.Emit(OpCodes.Ldnull);
                 g.Emit(OpCodes.Ldftn, mb);
                 g.Emit(
@@ -326,46 +346,42 @@ static class NinaILCompiler {
                 );
                 g.Emit(
                     OpCodes.Call,
-                    typeof(List<object>).GetMethod("Add") !
+                    typeof(List<object>).GetMethod("Insert") !
                 );
-                ins.Add("self");
-                g.Emit(OpCodes.Ldarg_0);
-                g.Emit(OpCodes.Stloc_0);
-                g.Emit(OpCodes.Ldloc_0);
-                LocalBuilder diff = g.DeclareLocal(typeof(int));
-                g.Emit(OpCodes.Call,
-                    typeof(List<object>).GetProperty("Count")!.GetGetMethod() !);
-                int stdCount = plist.Count;
-                for (int i = 0; i < stdCount; ++ i) {
+                ins.Insert(0, "self");
+                for (int i = 0; i < plistCount; ++ i) {
                     var (vname, init) = plist[i];
                     ins.Add(vname);
+                    g.Emit(OpCodes.Ldloc, cCount);
+                    g.Emit(OpCodes.Ldc_I4, i);
+                    Label label = g.DefineLabel();
+                    g.Emit(OpCodes.Bgt, label);
+                    g.Emit(OpCodes.Ldloc_0);
+                    if (init != null) {
+                        compile_expr(
+                            _mb: _mb,
+                            _cl: _cl,
+                            _g: g,
+                            _expr: init,
+                            _globs: _globs,
+                            _glob_consts: _glob_consts,
+                            _ins: _ins,
+                            _in_consts: _in_consts,
+                            _outs: outs,
+                            _out_consts: out_consts,
+                            _pos_table: _pos_table,
+                            _ss: ss
+                        );
+                    }
+                    else {
+                        g.Emit(OpCodes.Ldnull);
+                    }
+                    g.Emit(
+                        OpCodes.Call,
+                        typeof(List<object>).GetMethod("Add") !
+                    );
+                    g.MarkLabel(label);
                 }
-                g.Emit(OpCodes.Ldc_I4, stdCount);
-                g.Emit(OpCodes.Sub);
-                g.Emit(OpCodes.Stloc, diff);
-                g.Emit(OpCodes.Ldloc, diff);
-                g.Emit(OpCodes.Ldc_I4_0);
-                Label label = g.DefineLabel();
-                g.Emit(OpCodes.Bge, label);
-                Label label2 = g.DefineLabel();
-                for (int i = plist.Count - 1; i >= 0; -- i) {
-                    var (vname, init) = plist[i];
-                    Label tmpLabel = g.DefineLabel();
-                    g.Emit(OpCodes.Bge, label2);
-                    
-                    g.Emit(OpCodes.Ldloc, diff);
-                    g.Emit(OpCodes.Ldc_I4_1);
-                    g.Emit(OpCodes.Sub);
-                    g.Emit(OpCodes.Stloc, diff);
-                }
-                g.Emit(OpCodes.Br, label2);
-                g.MarkLabel(label);
-                g.Emit(OpCodes.Ldloc_0);
-                g.Emit(OpCodes.Ldc_I4, stdCount);
-                g.Emit(OpCodes.Ldloc, diff);
-                g.Emit(OpCodes.Call,
-                    typeof(List<object>).GetMethod("RemoveRange") !);
-                g.MarkLabel(label2);
                 compile_block(
                     _mb: _mb,
                     _cl: _cl,
@@ -629,11 +645,9 @@ static class NinaILCompiler {
                         }
                         _g.Emit(OpCodes.Stloc, tmp);
                     }
-                    _g.Emit(OpCodes.Ldc_I4, args.Count + 1);
                     _g.Emit(OpCodes.Newobj,
                         typeof(List<object>).GetConstructor(new Type[0]) !);
                     _g.Emit(OpCodes.Dup);
-                    _g.Emit(OpCodes.Ldc_I4_0);
                     if (args.Count > 0 && args[0].annos.Contains(
                             NinaConstsProviderUtil.NINA_ANNO_SPECIALARG)) {
                         compile_expr(
@@ -656,11 +670,10 @@ static class NinaILCompiler {
                         _g.Emit(OpCodes.Ldloc, tmp);
                     }
                     _g.Emit(OpCodes.Call,
-                        typeof(List<object>).GetProperty("Item")!.GetSetMethod() !);
+                        typeof(List<object>).GetMethod("Add") !);
                     for (int i = 0; i < args.Count; ++ i) {
                         ANinaASTExpression v = args[i];
                         _g.Emit(OpCodes.Dup);
-                        _g.Emit(OpCodes.Ldc_I4, i + 1);
                         compile_expr(
                             _mb: _mb,
                             _cl: _cl,
@@ -676,8 +689,7 @@ static class NinaILCompiler {
                             _ss: _ss
                         );
                         _g.Emit(OpCodes.Call,
-                            typeof(List<object>).GetProperty("Item")
-                                !.GetSetMethod() !);
+                            typeof(List<object>).GetMethod("Add") !);
                     }
                     
                     _g.EmitCall(
