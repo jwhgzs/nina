@@ -41,9 +41,12 @@ static class NinaDebugger {
         }
     }
     public static void read_ILCode(byte[] _arr, ref int _i) {
-        byte b = _arr[_i ++];
-        if (b == 0xfe) {
-            ++ _i;
+        try {
+            byte b = _arr[_i ++];
+            if (b == 0xfe) {
+                ++ _i;
+            }
         }
+        catch {}
     }
 }

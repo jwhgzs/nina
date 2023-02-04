@@ -50,8 +50,8 @@ static class NinaILCompiler {
             NinaASTIdentifierExpression _id, ILGenerator _g,
             Dictionary<string, FieldInfo> _globs,
             Dictionary<string, FieldInfo> _glob_consts,
-            Dictionary<string, FieldInfo> _outs,
-            Dictionary<string, FieldInfo> _out_consts,
+            Dictionary<string, (FieldInfo, int)> _outs,
+            Dictionary<string, (FieldInfo, int)> _out_consts,
             List<string> _ins,
             List<string> _in_consts,
             Dictionary<string, List<(int, NinaErrorPosition)>> _pos_table,
@@ -72,26 +72,22 @@ static class NinaILCompiler {
                     typeof(List<object>).GetProperty("Item")!.GetGetMethod() !);
             }
             else if (_outs.TryGetValue(idname,
-                    out FieldInfo? from_outs)) {
-                _g.Emit(OpCodes.Ldarg_0);
-                _g.Emit(OpCodes.Ldfld, from_outs);
-                _g.Emit(OpCodes.Ldstr, idname);
+                    out (FieldInfo, int) from_outs)) {
+                _g.Emit(OpCodes.Ldsfld, from_outs.Item1);
+                _g.Emit(OpCodes.Ldc_I4, from_outs.Item2);
                 _g.Emit(
                     OpCodes.Call,
-                    typeof(Dictionary<string, object>)
-                        .GetProperty("Item")
+                    typeof(List<object>).GetProperty("Item")
                         !.GetGetMethod() !
                 );
             }
             else if (_out_consts.TryGetValue(idname,
-                    out FieldInfo? from_out_consts)) {
-                _g.Emit(OpCodes.Ldarg_0);
-                _g.Emit(OpCodes.Ldfld, from_out_consts);
-                _g.Emit(OpCodes.Ldstr, idname);
+                    out (FieldInfo, int) from_out_consts)) {
+                _g.Emit(OpCodes.Ldsfld, from_out_consts.Item1);
+                _g.Emit(OpCodes.Ldc_I4, from_out_consts.Item2);
                 _g.Emit(
                     OpCodes.Call,
-                    typeof(Dictionary<string, object>)
-                        .GetProperty("Item")
+                    typeof(List<object>).GetProperty("Item")
                         !.GetGetMethod() !
                 );
             }
@@ -123,27 +119,23 @@ static class NinaILCompiler {
                     139012, _id.pos);
             }
             else if (_outs.TryGetValue(idname,
-                    out FieldInfo? from_outs)) {
+                    out (FieldInfo, int) from_outs)) {
                 LocalBuilder tmp = _g.DeclareLocal(typeof(object));
                 _g.Emit(OpCodes.Stloc, tmp);
-                _g.Emit(OpCodes.Ldarg_0);
-                _g.Emit(OpCodes.Ldfld, from_outs);
-                _g.Emit(OpCodes.Ldstr, idname);
+                _g.Emit(OpCodes.Ldsfld, from_outs.Item1);
+                _g.Emit(OpCodes.Ldc_I4, from_outs.Item2);
                 _g.Emit(OpCodes.Ldloc, tmp);
                 _g.Emit(
                     OpCodes.Call,
-                    typeof(Dictionary<string, object>)
-                        .GetProperty("Item")
+                    typeof(List<object>).GetProperty("Item")
                         !.GetSetMethod() !
                 );
             }
-            else if (_out_consts.TryGetValue(idname,
-                    out FieldInfo? from_out_consts)) {
+            else if (_out_consts.TryGetValue(idname, out _)) {
                 NinaError.error("invalid assignment to constant.",
                     491293, _id.pos);
             }
-            else if (_globs.TryGetValue(idname,
-                    out FieldInfo? from_glob)) {
+            else if (_globs.TryGetValue(idname, out FieldInfo? from_glob)) {
                 _g.Emit(OpCodes.Stsfld, from_glob);
             }
             else if (_glob_consts.TryGetValue(idname, out _)) {
@@ -163,8 +155,8 @@ static class NinaILCompiler {
             ANinaASTExpression _expr,
             Dictionary<string, FieldInfo> _globs,
             Dictionary<string, FieldInfo> _glob_consts,
-            Dictionary<string, FieldInfo> _outs,
-            Dictionary<string, FieldInfo> _out_consts,
+            Dictionary<string, (FieldInfo, int)> _outs,
+            Dictionary<string, (FieldInfo, int)> _out_consts,
             List<string> _ins,
             List<string> _in_consts,
             Dictionary<string, List<(int, NinaErrorPosition)>> _pos_table,
@@ -257,32 +249,31 @@ static class NinaILCompiler {
                     = _mb.DefineType(
                         name: NinaConstsProviderUtil.IL_CLOSURECLASS_ID_PREFIX
                             + Guid.NewGuid().ToString("N"),
-                        attr: TypeAttributes.Public
+                        attr: TypeAttributes.Public | TypeAttributes.Abstract
                     );
                 MethodBuilder mb = cl.DefineMethod(
                     name: "func",
-                    attributes: MethodAttributes.Public,
-                    callingConvention: CallingConventions.HasThis,
+                    attributes: MethodAttributes.Public | MethodAttributes.Static,
+                    callingConvention: CallingConventions.Standard,
                     returnType: typeof(object),
-                    parameterTypes: new [] { typeof(object[]) }
+                    parameterTypes: new [] { typeof(List<object>) }
                 );
                 string ss = NinaCompilerUtil.snapshot_method(
                     block.pos.file, mb
                 );
-                ConstructorBuilder ctor = cl.DefineConstructor(
-                    attributes: MethodAttributes.Public,
-                    callingConvention: CallingConventions.Standard,
-                    parameterTypes: new Type[0]
-                );
-                ILGenerator cg = ctor.GetILGenerator();
-                cg.Emit(OpCodes.Ldarg_0);
-                cg.Emit(OpCodes.Call, typeof(object).GetConstructor(new Type[0]) !);
-                cg.Emit(OpCodes.Ret);
 
-                Dictionary<string, FieldInfo> outs
-                    = new Dictionary<string, FieldInfo>(_outs);
-                Dictionary<string, FieldInfo> out_consts
-                    = new Dictionary<string, FieldInfo>(_out_consts);
+                var genField = () => {
+                    return cl.DefineField(
+                        fieldName: NinaConstsProviderUtil.IL_BUILTIN_ID_PREFIX
+                            + Guid.NewGuid().ToString("N"),
+                        type: typeof(List<object>),
+                        attributes: FieldAttributes.Public | FieldAttributes.Static
+                    );
+                };
+                Dictionary<string, (FieldInfo, int)> outs
+                    = new Dictionary<string, (FieldInfo, int)>(_outs);
+                Dictionary<string, (FieldInfo, int)> out_consts
+                    = new Dictionary<string, (FieldInfo, int)>(_out_consts);
                 Dictionary<FieldInfo, FieldInfo> outs_handled
                     = new Dictionary<FieldInfo, FieldInfo>();
                 Dictionary<FieldInfo, FieldInfo> out_consts_handled
@@ -290,28 +281,28 @@ static class NinaILCompiler {
                 List<string> ins = new List<string>();
                 List<string> in_consts = new List<string>();
                 for (int i = 0; i < _outs.Count; ++ i) {
-                    var (vname, fld) = _outs.ElementAt(i);
+                    var (vname, (fld, fid)) = _outs.ElementAt(i);
                     if (! outs_handled.ContainsKey(fld)) {
-                        outs_handled[fld] = cl.DefineField(
-                            fieldName: NinaConstsProviderUtil.IL_BUILTIN_ID_PREFIX
-                                + Guid.NewGuid().ToString("N"),
-                            type: typeof(Dictionary<string, object>),
-                            attributes: FieldAttributes.Public
-                        );
+                        outs_handled[fld] = genField();
                     }
-                    outs[vname] = outs_handled[fld];
+                    outs[vname] = (outs_handled[fld], fid);
                 }
                 for (int i = 0; i < _out_consts.Count; ++ i) {
-                    var (vname, fld) = _out_consts.ElementAt(i);
+                    var (vname, (fld, fid)) = _out_consts.ElementAt(i);
                     if (! out_consts_handled.ContainsKey(fld)) {
-                        out_consts_handled[fld] = cl.DefineField(
-                            fieldName: NinaConstsProviderUtil.IL_BUILTIN_ID_PREFIX
-                                + Guid.NewGuid().ToString("N"),
-                            type: typeof(Dictionary<string, object>),
-                            attributes: FieldAttributes.Public
-                        );
+                        out_consts_handled[fld] = genField();
                     }
-                    out_consts[vname] = out_consts_handled[fld];
+                    out_consts[vname] = (out_consts_handled[fld], fid);
+                }
+                FieldBuilder env_out1 = genField();
+                FieldBuilder env_out2 = genField();
+                for (int i = 0; i < _ins.Count; ++ i) {
+                    string vname = _ins[i];
+                    outs[vname] = (env_out1, i);
+                }
+                for (int i = 0; i < _in_consts.Count; ++ i) {
+                    string vname = _in_consts[i];
+                    out_consts[vname] = (env_out2, i);
                 }
 
                 ILGenerator g = mb.GetILGenerator();
@@ -327,57 +318,54 @@ static class NinaILCompiler {
                 LocalBuilder returnReg = g.DeclareLocal(typeof(object));
                 Label returnLabel = g.DefineLabel();
                 g.Emit(OpCodes.Ldloc_0);
-                g.Emit(OpCodes.Ldarg_0);
+                g.Emit(OpCodes.Ldnull);
                 g.Emit(OpCodes.Ldftn, mb);
-                g.Emit(OpCodes.Newobj,
-                    typeof(Func<object[], object>).GetConstructors()[0]);
+                g.Emit(
+                    OpCodes.Newobj,
+                    typeof(Func<List<object>, object>).GetConstructors()[0] !
+                );
                 g.Emit(
                     OpCodes.Call,
                     typeof(List<object>).GetMethod("Add") !
                 );
                 ins.Add("self");
-                g.Emit(OpCodes.Ldarg_1);
-                g.Emit(OpCodes.Ldlen);
-                for (int i = 0; i < plist.Count; ++ i) {
+                g.Emit(OpCodes.Ldarg_0);
+                g.Emit(OpCodes.Stloc_0);
+                g.Emit(OpCodes.Ldloc_0);
+                LocalBuilder diff = g.DeclareLocal(typeof(int));
+                g.Emit(OpCodes.Call,
+                    typeof(List<object>).GetProperty("Count")!.GetGetMethod() !);
+                int stdCount = plist.Count;
+                for (int i = 0; i < stdCount; ++ i) {
                     var (vname, init) = plist[i];
                     ins.Add(vname);
-                    g.Emit(OpCodes.Dup);
-                    g.Emit(OpCodes.Ldc_I4, i);
-                    Label label1 = g.DefineLabel();
-                    g.Emit(OpCodes.Ble, label1);
-                    g.Emit(OpCodes.Ldloc_0);
-                    g.Emit(OpCodes.Ldarg_1);
-                    g.Emit(OpCodes.Ldc_I4, i);
-                    g.Emit(OpCodes.Ldelem_Ref);
-                    Label label2 = g.DefineLabel();
-                    g.Emit(OpCodes.Br, label2);
-                    g.MarkLabel(label1);
-                    g.Emit(OpCodes.Ldloc_0);
-                    if (init != null) {
-                        compile_expr(
-                            _mb: _mb,
-                            _cl: _cl,
-                            _g: g,
-                            _expr: init,
-                            _globs: _globs,
-                            _glob_consts: _glob_consts,
-                            _ins: _ins,
-                            _in_consts: _in_consts,
-                            _outs: outs,
-                            _out_consts: out_consts,
-                            _pos_table: _pos_table,
-                            _ss: ss
-                        );
-                    }
-                    else {
-                        g.Emit(OpCodes.Ldnull);
-                    }
-                    g.MarkLabel(label2);
-                    g.Emit(
-                        OpCodes.Call,
-                        typeof(List<object>).GetMethod("Add") !
-                    );
                 }
+                g.Emit(OpCodes.Ldc_I4, stdCount);
+                g.Emit(OpCodes.Sub);
+                g.Emit(OpCodes.Stloc, diff);
+                g.Emit(OpCodes.Ldloc, diff);
+                g.Emit(OpCodes.Ldc_I4_0);
+                Label label = g.DefineLabel();
+                g.Emit(OpCodes.Bge, label);
+                Label label2 = g.DefineLabel();
+                for (int i = plist.Count - 1; i >= 0; -- i) {
+                    var (vname, init) = plist[i];
+                    Label tmpLabel = g.DefineLabel();
+                    g.Emit(OpCodes.Bge, label2);
+                    
+                    g.Emit(OpCodes.Ldloc, diff);
+                    g.Emit(OpCodes.Ldc_I4_1);
+                    g.Emit(OpCodes.Sub);
+                    g.Emit(OpCodes.Stloc, diff);
+                }
+                g.Emit(OpCodes.Br, label2);
+                g.MarkLabel(label);
+                g.Emit(OpCodes.Ldloc_0);
+                g.Emit(OpCodes.Ldc_I4, stdCount);
+                g.Emit(OpCodes.Ldloc, diff);
+                g.Emit(OpCodes.Call,
+                    typeof(List<object>).GetMethod("RemoveRange") !);
+                g.MarkLabel(label2);
                 compile_block(
                     _mb: _mb,
                     _cl: _cl,
@@ -399,14 +387,28 @@ static class NinaILCompiler {
                 g.Emit(OpCodes.Ret);
 
                 Type clTp = cl.CreateType() !;
-                _g.Emit(OpCodes.Newobj, cl.GetConstructors()[0]);
                 for (int i = 0; i < outs_handled.Count; ++ i) {
                     var (oldFld, newFld) = outs_handled.ElementAt(i);
-                    _g.Emit(OpCodes.Dup);
-                    _g.Emit(OpCodes.Ldarg_0);
-                    _g.Emit(OpCodes.Ldfld, oldFld);
-                    _g.Emit(OpCodes.Stfld, newFld);
+                    _g.Emit(OpCodes.Ldsfld, oldFld);
+                    _g.Emit(OpCodes.Stsfld, newFld);
                 }
+                for (int i = 0; i < out_consts_handled.Count; ++ i) {
+                    var (oldFld, newFld) = out_consts_handled.ElementAt(i);
+                    _g.Emit(OpCodes.Ldsfld, oldFld);
+                    _g.Emit(OpCodes.Stsfld, newFld);
+                }
+                if (_ins.Count > 0) {
+                    _g.Emit(OpCodes.Ldloc_0);
+                    _g.Emit(OpCodes.Stsfld, env_out1);
+                }
+                if (_in_consts.Count > 0) {
+                    _g.Emit(OpCodes.Ldloc_1);
+                    _g.Emit(OpCodes.Stsfld, env_out2);
+                }
+                _g.Emit(OpCodes.Ldnull);
+                _g.Emit(OpCodes.Ldftn, mb);
+                _g.Emit(OpCodes.Newobj,
+                    typeof(Func<List<object>, object>).GetConstructors()[0] !);
             }
             else if (binary.type == NinaOperatorType.Equ) {
                 ANinaASTExpression l = binary.expr_l;
@@ -628,7 +630,8 @@ static class NinaILCompiler {
                         _g.Emit(OpCodes.Stloc, tmp);
                     }
                     _g.Emit(OpCodes.Ldc_I4, args.Count + 1);
-                    _g.Emit(OpCodes.Newarr, typeof(object));
+                    _g.Emit(OpCodes.Newobj,
+                        typeof(List<object>).GetConstructor(new Type[0]) !);
                     _g.Emit(OpCodes.Dup);
                     _g.Emit(OpCodes.Ldc_I4_0);
                     if (args.Count > 0 && args[0].annos.Contains(
@@ -652,7 +655,8 @@ static class NinaILCompiler {
                     else {
                         _g.Emit(OpCodes.Ldloc, tmp);
                     }
-                    _g.Emit(OpCodes.Stelem_Ref);
+                    _g.Emit(OpCodes.Call,
+                        typeof(List<object>).GetProperty("Item")!.GetSetMethod() !);
                     for (int i = 0; i < args.Count; ++ i) {
                         ANinaASTExpression v = args[i];
                         _g.Emit(OpCodes.Dup);
@@ -671,11 +675,17 @@ static class NinaILCompiler {
                             _pos_table: _pos_table,
                             _ss: _ss
                         );
-                        _g.Emit(OpCodes.Stelem_Ref);
+                        _g.Emit(OpCodes.Call,
+                            typeof(List<object>).GetProperty("Item")
+                                !.GetSetMethod() !);
                     }
                     
-                    _g.Emit(OpCodes.Call,
-                        typeof(NinaAPIUtil).GetMethod("func_invoke") !);
+                    _g.EmitCall(
+                        opcode: OpCodes.Callvirt,
+                        methodInfo: typeof(Func<List<object>, object>)
+                            .GetMethod("Invoke") !,
+                        optionalParameterTypes: null
+                    );
                 }
                 else {
                     if (args.Count != inner!.GetParameters().Count()) {
@@ -837,8 +847,8 @@ static class NinaILCompiler {
             NinaASTBlockExpression _block,
             Dictionary<string, FieldInfo> _globs,
             Dictionary<string, FieldInfo> _glob_consts,
-            Dictionary<string, FieldInfo> _outs,
-            Dictionary<string, FieldInfo> _out_consts,
+            Dictionary<string, (FieldInfo, int)> _outs,
+            Dictionary<string, (FieldInfo, int)> _out_consts,
             List<string> _ins,
             List<string> _in_consts,
             Dictionary<string, List<(int, NinaErrorPosition)>> _pos_table,
@@ -874,8 +884,8 @@ static class NinaILCompiler {
             ANinaASTStatement _stm,
             Dictionary<string, FieldInfo> _globs,
             Dictionary<string, FieldInfo> _glob_consts,
-            Dictionary<string, FieldInfo> _outs,
-            Dictionary<string, FieldInfo> _out_consts,
+            Dictionary<string, (FieldInfo, int)> _outs,
+            Dictionary<string, (FieldInfo, int)> _out_consts,
             List<string> _ins,
             List<string> _in_consts,
             Dictionary<string, List<(int, NinaErrorPosition)>> _pos_table,
@@ -939,6 +949,7 @@ static class NinaILCompiler {
                 }
                 else {
                     _g.Emit(OpCodes.Ldloc, vars.isConst ? 1 : 0);
+                    (vars.isConst ? _in_consts : _ins).Add(id);
                     doit();
                     _g.Emit(
                         OpCodes.Call,
@@ -1155,7 +1166,7 @@ static class NinaILCompiler {
             FieldBuilder fb = _tb.DefineField(
                 fieldName: NinaConstsProviderUtil.IL_BUILTIN_ID_PREFIX
                     + Guid.NewGuid().ToString("N"),
-                type: typeof(Func<object[], object>),
+                type: typeof(Func<List<object>, object>),
                 attributes: FieldAttributes.Public | FieldAttributes.Static
             );
             MethodBuilder mb = _tb.DefineMethod(
@@ -1164,13 +1175,14 @@ static class NinaILCompiler {
                 attributes: MethodAttributes.Public | MethodAttributes.Static,
                 callingConvention: CallingConventions.Standard,
                 returnType: typeof(object),
-                parameterTypes: new [] { typeof(object[]) }
+                parameterTypes: new [] { typeof(List<object>) }
             );
             ILGenerator mg = mb.GetILGenerator();
             ParameterInfo[] plist = v.GetParameters();
             List<Type> types = new List<Type>();
             mg.Emit(OpCodes.Ldarg_0);
-            mg.Emit(OpCodes.Ldlen);
+            mg.Emit(OpCodes.Call,
+                typeof(List<object>).GetProperty("Count")!.GetGetMethod() !);
             mg.Emit(OpCodes.Ldc_I4, plist.Length + 1);
             Label label = mg.DefineLabel();
             mg.Emit(OpCodes.Beq, label);
@@ -1187,7 +1199,8 @@ static class NinaILCompiler {
                 types.Add(w.ParameterType);
                 mg.Emit(OpCodes.Ldarg_0);
                 mg.Emit(OpCodes.Ldc_I4, j + 1);
-                mg.Emit(OpCodes.Ldelem_Ref);
+                mg.Emit(OpCodes.Call,
+                    typeof(List<object>).GetProperty("Item")!.GetGetMethod() !);
             }
             mg.EmitCall(
                 opcode: OpCodes.Call,
@@ -1198,7 +1211,7 @@ static class NinaILCompiler {
             _g.Emit(OpCodes.Ldnull);
             _g.Emit(OpCodes.Ldftn, mb);
             _g.Emit(OpCodes.Newobj,
-                typeof(Func<object[], object>).GetConstructors()[0]);
+                typeof(Func<List<object>, object>).GetConstructors()[0]);
             _g.Emit(OpCodes.Stsfld, fb);
             _glob_consts[NinaConstsProviderUtil.NINA_ID_PREFIX + v.Name]
                 = fb;
@@ -1254,9 +1267,9 @@ static class NinaILCompiler {
             _ins: new List<string>(),
             _in_consts: new List<string>(),
             _outs:
-                new Dictionary<string, FieldInfo>(),
+                new Dictionary<string, (FieldInfo, int)>(),
             _out_consts:
-                new Dictionary<string, FieldInfo>(),
+                new Dictionary<string, (FieldInfo, int)>(),
             _returnReg: returnReg,
             _returnLabel: returnLabel,
             _pos_table: _pos_table,
