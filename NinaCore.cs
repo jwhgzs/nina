@@ -1,3 +1,5 @@
+#define MODE_DEBUG
+
 using System.Reflection;
 
 namespace Nina;

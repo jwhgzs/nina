@@ -74,7 +74,8 @@ public static class NinaAPIUtil {
                     + NinaAPIUtil.toString(o["type"])
                     + "]"
                 : "[Object]";
-        else if (_o is Delegate)
+        else if (_o.GetType().Name.StartsWith(
+                NinaConstsProviderUtil.IL_CLOSURECLASS_ID_PREFIX))
             return "[Function]";
         else
             return "[Unknown]";
@@ -256,13 +257,15 @@ public static class NinaAPIUtil {
             int matched = 0;
             for (int i = 0; i < frames.Length; ++ i) {
                 StackFrame v = frames[i];
-                MethodBase nmtd = v.GetMethod() !;
-                string nss = NinaCompilerUtil.snapshot_method(_file, nmtd);
+                MethodBase? nmtd = v.GetMethod();
+                string nss = nmtd != null
+                    ? NinaCompilerUtil.snapshot_method(_file, nmtd)
+                    : "";
                 if (pos_table.ContainsKey(nss)) {
                     if (matched >= _n) {
                         ss = nss;
                         offset = v.GetILOffset();
-                        byte[] a = nmtd.GetMethodBody()!.GetILAsByteArray()!;
+                        byte[] a = nmtd!.GetMethodBody()!.GetILAsByteArray()!;
                         NinaDebugger.read_ILCode(a, ref offset);
                         break;
                     }
@@ -323,6 +326,12 @@ public static class NinaAPIUtil {
             ["message"] = msg,
             ["code"] = convert_ex_resolve_code(msg)
         };
+    }
+    public static object func_invoke(dynamic _func, object[] _params) {
+        Type tp = _func.GetType();
+        if (! tp.Name.StartsWith(NinaConstsProviderUtil.IL_CLOSURECLASS_ID_PREFIX))
+            NinaError.error("invalid function to call.", 163091);
+        return _func(_params);
     }
 }
 

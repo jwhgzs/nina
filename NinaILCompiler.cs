@@ -50,31 +50,50 @@ static class NinaILCompiler {
             NinaASTIdentifierExpression _id, ILGenerator _g,
             Dictionary<string, FieldInfo> _globs,
             Dictionary<string, FieldInfo> _glob_consts,
-            Dictionary<string, FieldInfo> _fields,
-            Dictionary<string, FieldInfo> _field_consts,
-            Dictionary<string, LocalBuilder> _locals,
-            Dictionary<string, LocalBuilder> _local_consts,
+            Dictionary<string, FieldInfo> _outs,
+            Dictionary<string, FieldInfo> _out_consts,
+            List<string> _ins,
+            List<string> _in_consts,
             Dictionary<string, List<(int, NinaErrorPosition)>> _pos_table,
             string _ss,
-            bool _isSetting = false,
-            TypeBuilder? _closure_builder = null) {
+            bool _isSetting = false) {
         string idname = _id.name;
         if (! _isSetting) {
-            if (_locals.TryGetValue(idname,
-                    out LocalBuilder? from_locals)) {
-                _g.Emit(OpCodes.Ldloc, from_locals);
+            if (_ins.Contains(idname)) {
+                _g.Emit(OpCodes.Ldloc_0);
+                _g.Emit(OpCodes.Ldc_I4, _ins.LastIndexOf(idname));
+                _g.Emit(OpCodes.Call,
+                    typeof(List<object>).GetProperty("Item")!.GetGetMethod() !);
             }
-            else if (_local_consts.TryGetValue(idname,
-                    out LocalBuilder? from_local_consts)) {
-                _g.Emit(OpCodes.Ldloc, from_local_consts);
+            else if (_in_consts.Contains(idname)) {
+                _g.Emit(OpCodes.Ldloc_1);
+                _g.Emit(OpCodes.Ldc_I4, _in_consts.LastIndexOf(idname));
+                _g.Emit(OpCodes.Call,
+                    typeof(List<object>).GetProperty("Item")!.GetGetMethod() !);
             }
-            else if (_fields.TryGetValue(idname,
-                    out FieldInfo? from_fields)) {
-                _g.Emit(OpCodes.Ldsfld, from_fields);
+            else if (_outs.TryGetValue(idname,
+                    out FieldInfo? from_outs)) {
+                _g.Emit(OpCodes.Ldarg_0);
+                _g.Emit(OpCodes.Ldfld, from_outs);
+                _g.Emit(OpCodes.Ldstr, idname);
+                _g.Emit(
+                    OpCodes.Call,
+                    typeof(Dictionary<string, object>)
+                        .GetProperty("Item")
+                        !.GetGetMethod() !
+                );
             }
-            else if (_field_consts.TryGetValue(idname,
-                    out FieldInfo? from_field_consts)) {
-                _g.Emit(OpCodes.Ldsfld, from_field_consts);
+            else if (_out_consts.TryGetValue(idname,
+                    out FieldInfo? from_out_consts)) {
+                _g.Emit(OpCodes.Ldarg_0);
+                _g.Emit(OpCodes.Ldfld, from_out_consts);
+                _g.Emit(OpCodes.Ldstr, idname);
+                _g.Emit(
+                    OpCodes.Call,
+                    typeof(Dictionary<string, object>)
+                        .GetProperty("Item")
+                        !.GetGetMethod() !
+                );
             }
             else if (_globs.TryGetValue(idname,
                     out FieldInfo? from_glob)) {
@@ -90,31 +109,38 @@ static class NinaILCompiler {
             }
         }
         else {
-            if (_locals.TryGetValue(idname,
-                    out LocalBuilder? from_locals)) {
-                _g.Emit(OpCodes.Dup);
-                _g.Emit(OpCodes.Stloc, from_locals);
-                if (_fields.TryGetValue(idname,
-                        out FieldInfo? from_field)) {
-                    _g.Emit(OpCodes.Stsfld, from_field);
-                }
-                else {
-                    NinaError.error(
-                        "unexpected error.", 491293);
-                }
+            if (_ins.Contains(idname)) {
+                LocalBuilder tmp = _g.DeclareLocal(typeof(object));
+                _g.Emit(OpCodes.Stloc, tmp);
+                _g.Emit(OpCodes.Ldloc_0);
+                _g.Emit(OpCodes.Ldc_I4, _ins.LastIndexOf(idname));
+                _g.Emit(OpCodes.Ldloc, tmp);
+                _g.Emit(OpCodes.Call,
+                    typeof(List<object>).GetProperty("Item")!.GetSetMethod() !);
             }
-            else if (_local_consts.TryGetValue(idname,
-                    out LocalBuilder? from_local_consts)) {
+            else if (_in_consts.Contains(idname)) {
+                NinaError.error("invalid assignment to constant.",
+                    139012, _id.pos);
+            }
+            else if (_outs.TryGetValue(idname,
+                    out FieldInfo? from_outs)) {
+                LocalBuilder tmp = _g.DeclareLocal(typeof(object));
+                _g.Emit(OpCodes.Stloc, tmp);
+                _g.Emit(OpCodes.Ldarg_0);
+                _g.Emit(OpCodes.Ldfld, from_outs);
+                _g.Emit(OpCodes.Ldstr, idname);
+                _g.Emit(OpCodes.Ldloc, tmp);
+                _g.Emit(
+                    OpCodes.Call,
+                    typeof(Dictionary<string, object>)
+                        .GetProperty("Item")
+                        !.GetSetMethod() !
+                );
+            }
+            else if (_out_consts.TryGetValue(idname,
+                    out FieldInfo? from_out_consts)) {
                 NinaError.error("invalid assignment to constant.",
                     491293, _id.pos);
-            }
-            else if (_fields.TryGetValue(idname,
-                    out FieldInfo? from_field)) {
-                _g.Emit(OpCodes.Stsfld, from_field);
-            }
-            else if (_field_consts.TryGetValue(idname, out _)) {
-                NinaError.error("invalid assignment to constant.",
-                    529931, _id.pos);
             }
             else if (_globs.TryGetValue(idname,
                     out FieldInfo? from_glob)) {
@@ -137,13 +163,12 @@ static class NinaILCompiler {
             ANinaASTExpression _expr,
             Dictionary<string, FieldInfo> _globs,
             Dictionary<string, FieldInfo> _glob_consts,
-            Dictionary<string, FieldInfo> _fields,
-            Dictionary<string, FieldInfo> _field_consts,
-            Dictionary<string, LocalBuilder> _locals,
-            Dictionary<string, LocalBuilder> _local_consts,
+            Dictionary<string, FieldInfo> _outs,
+            Dictionary<string, FieldInfo> _out_consts,
+            List<string> _ins,
+            List<string> _in_consts,
             Dictionary<string, List<(int, NinaErrorPosition)>> _pos_table,
-            string _ss,
-            TypeBuilder? _closure_builder = null) {
+            string _ss) {
         if (_expr is NinaASTLiteralExpression lit) {
             if (lit.type == NinaCodeBlockType.Number) {
                 _g.Emit(OpCodes.Ldc_R8, (double) lit.val_d !);
@@ -165,11 +190,10 @@ static class NinaILCompiler {
                 _g: _g,
                 _globs: _globs,
                 _glob_consts: _glob_consts,
-                _closure_builder: _closure_builder,
-                _fields: _fields,
-                _field_consts: _field_consts,
-                _locals: _locals,
-                _local_consts: _local_consts,
+                _ins: _ins,
+                _in_consts: _in_consts,
+                _outs: _outs,
+                _out_consts: _out_consts,
                 _pos_table: _pos_table,
                 _ss: _ss
             );
@@ -184,11 +208,10 @@ static class NinaILCompiler {
                     _expr: binary.expr_l,
                     _globs: _globs,
                     _glob_consts: _glob_consts,
-                    _closure_builder: _closure_builder,
-                    _fields: _fields,
-                    _field_consts: _field_consts,
-                    _locals: _locals,
-                    _local_consts: _local_consts,
+                    _ins: _ins,
+                    _in_consts: _in_consts,
+                    _outs: _outs,
+                    _out_consts: _out_consts,
                     _pos_table: _pos_table,
                     _ss: _ss
                 );
@@ -209,11 +232,10 @@ static class NinaILCompiler {
                     _expr: binary.expr_r,
                     _globs: _globs,
                     _glob_consts: _glob_consts,
-                    _closure_builder: _closure_builder,
-                    _fields: _fields,
-                    _field_consts: _field_consts,
-                    _locals: _locals,
-                    _local_consts: _local_consts,
+                    _ins: _ins,
+                    _in_consts: _in_consts,
+                    _outs: _outs,
+                    _out_consts: _out_consts,
                     _pos_table: _pos_table,
                     _ss: _ss
                 );
@@ -235,60 +257,102 @@ static class NinaILCompiler {
                     = _mb.DefineType(
                         name: NinaConstsProviderUtil.IL_CLOSURECLASS_ID_PREFIX
                             + Guid.NewGuid().ToString("N"),
-                        attr: TypeAttributes.Public | TypeAttributes.Sealed
+                        attr: TypeAttributes.Public
                     );
-                Dictionary<string, FieldInfo> fields
-                    = new Dictionary<string, FieldInfo>(_fields);
-                Dictionary<string, FieldInfo> field_consts
-                    = new Dictionary<string, FieldInfo>(_field_consts);
-                Dictionary<string, LocalBuilder> locals
-                    = new Dictionary<string, LocalBuilder>();
-                Dictionary<string, LocalBuilder> local_consts
-                    = new Dictionary<string, LocalBuilder>();
                 MethodBuilder mb = cl.DefineMethod(
                     name: "func",
-                    attributes: MethodAttributes.Public | MethodAttributes.Static,
-                    callingConvention: CallingConventions.Standard,
+                    attributes: MethodAttributes.Public,
+                    callingConvention: CallingConventions.HasThis,
                     returnType: typeof(object),
                     parameterTypes: new [] { typeof(object[]) }
                 );
                 string ss = NinaCompilerUtil.snapshot_method(
                     block.pos.file, mb
                 );
-                FieldBuilder fb_self
-                    = cl.DefineField(
-                        fieldName: "self",
-                        type: typeof(Func<object[], object>),
-                        attributes: FieldAttributes.Public | FieldAttributes.Static
-                    );
-                fields["self"] = fb_self;
+                ConstructorBuilder ctor = cl.DefineConstructor(
+                    attributes: MethodAttributes.Public,
+                    callingConvention: CallingConventions.Standard,
+                    parameterTypes: new Type[0]
+                );
+                ILGenerator cg = ctor.GetILGenerator();
+                cg.Emit(OpCodes.Ldarg_0);
+                cg.Emit(OpCodes.Call, typeof(object).GetConstructor(new Type[0]) !);
+                cg.Emit(OpCodes.Ret);
+
+                Dictionary<string, FieldInfo> outs
+                    = new Dictionary<string, FieldInfo>(_outs);
+                Dictionary<string, FieldInfo> out_consts
+                    = new Dictionary<string, FieldInfo>(_out_consts);
+                Dictionary<FieldInfo, FieldInfo> outs_handled
+                    = new Dictionary<FieldInfo, FieldInfo>();
+                Dictionary<FieldInfo, FieldInfo> out_consts_handled
+                    = new Dictionary<FieldInfo, FieldInfo>();
+                List<string> ins = new List<string>();
+                List<string> in_consts = new List<string>();
+                for (int i = 0; i < _outs.Count; ++ i) {
+                    var (vname, fld) = _outs.ElementAt(i);
+                    if (! outs_handled.ContainsKey(fld)) {
+                        outs_handled[fld] = cl.DefineField(
+                            fieldName: NinaConstsProviderUtil.IL_BUILTIN_ID_PREFIX
+                                + Guid.NewGuid().ToString("N"),
+                            type: typeof(Dictionary<string, object>),
+                            attributes: FieldAttributes.Public
+                        );
+                    }
+                    outs[vname] = outs_handled[fld];
+                }
+                for (int i = 0; i < _out_consts.Count; ++ i) {
+                    var (vname, fld) = _out_consts.ElementAt(i);
+                    if (! out_consts_handled.ContainsKey(fld)) {
+                        out_consts_handled[fld] = cl.DefineField(
+                            fieldName: NinaConstsProviderUtil.IL_BUILTIN_ID_PREFIX
+                                + Guid.NewGuid().ToString("N"),
+                            type: typeof(Dictionary<string, object>),
+                            attributes: FieldAttributes.Public
+                        );
+                    }
+                    out_consts[vname] = out_consts_handled[fld];
+                }
+
                 ILGenerator g = mb.GetILGenerator();
+                LocalBuilder loc_ins = g.DeclareLocal(typeof(List<object>));
+                LocalBuilder loc_in_consts = g.DeclareLocal(typeof(List<object>));
+                g.Emit(OpCodes.Newobj,
+                    typeof(List<object>).GetConstructor(new Type[0]) !);
+                g.Emit(OpCodes.Stloc_0);
+                g.Emit(OpCodes.Newobj,
+                    typeof(List<object>).GetConstructor(new Type[0]) !);
+                g.Emit(OpCodes.Stloc_1);
+
                 LocalBuilder returnReg = g.DeclareLocal(typeof(object));
                 Label returnLabel = g.DefineLabel();
-                
+                g.Emit(OpCodes.Ldloc_0);
                 g.Emit(OpCodes.Ldarg_0);
+                g.Emit(OpCodes.Ldftn, mb);
+                g.Emit(OpCodes.Newobj,
+                    typeof(Func<object[], object>).GetConstructors()[0]);
+                g.Emit(
+                    OpCodes.Call,
+                    typeof(List<object>).GetMethod("Add") !
+                );
+                ins.Add("self");
+                g.Emit(OpCodes.Ldarg_1);
                 g.Emit(OpCodes.Ldlen);
                 for (int i = 0; i < plist.Count; ++ i) {
                     var (vname, init) = plist[i];
-                    LocalBuilder builder = g.DeclareLocal(typeof(object));
-                    FieldBuilder builder2 = cl.DefineField(
-                        fieldName: NinaConstsProviderUtil.IL_CLOSURECLASS_FIELD_PREFIX
-                            + Guid.NewGuid().ToString("N"),
-                        type: typeof(object),
-                        attributes: FieldAttributes.Public | FieldAttributes.Static
-                    );
-                    locals[vname] = builder;
-                    fields[vname] = builder2;
+                    ins.Add(vname);
                     g.Emit(OpCodes.Dup);
                     g.Emit(OpCodes.Ldc_I4, i);
                     Label label1 = g.DefineLabel();
                     g.Emit(OpCodes.Ble, label1);
-                    g.Emit(OpCodes.Ldarg_0);
+                    g.Emit(OpCodes.Ldloc_0);
+                    g.Emit(OpCodes.Ldarg_1);
                     g.Emit(OpCodes.Ldc_I4, i);
                     g.Emit(OpCodes.Ldelem_Ref);
                     Label label2 = g.DefineLabel();
                     g.Emit(OpCodes.Br, label2);
                     g.MarkLabel(label1);
+                    g.Emit(OpCodes.Ldloc_0);
                     if (init != null) {
                         compile_expr(
                             _mb: _mb,
@@ -297,11 +361,10 @@ static class NinaILCompiler {
                             _expr: init,
                             _globs: _globs,
                             _glob_consts: _glob_consts,
-                            _closure_builder: _closure_builder,
-                            _fields: _fields,
-                            _field_consts: _field_consts,
-                            _locals: locals,
-                            _local_consts: local_consts,
+                            _ins: _ins,
+                            _in_consts: _in_consts,
+                            _outs: outs,
+                            _out_consts: out_consts,
                             _pos_table: _pos_table,
                             _ss: ss
                         );
@@ -310,11 +373,11 @@ static class NinaILCompiler {
                         g.Emit(OpCodes.Ldnull);
                     }
                     g.MarkLabel(label2);
-                    g.Emit(OpCodes.Dup);
-                    g.Emit(OpCodes.Stloc, builder);
-                    g.Emit(OpCodes.Stsfld, builder2);
+                    g.Emit(
+                        OpCodes.Call,
+                        typeof(List<object>).GetMethod("Add") !
+                    );
                 }
-                g.Emit(OpCodes.Pop);
                 compile_block(
                     _mb: _mb,
                     _cl: _cl,
@@ -322,11 +385,10 @@ static class NinaILCompiler {
                     _block: block,
                     _globs: _globs,
                     _glob_consts: _glob_consts,
-                    _closure_builder: cl,
-                    _fields: fields,
-                    _field_consts: field_consts,
-                    _locals: locals,
-                    _local_consts: local_consts,
+                    _ins: ins,
+                    _in_consts: _in_consts,
+                    _outs: outs,
+                    _out_consts: out_consts,
                     _returnReg: returnReg,
                     _returnLabel: returnLabel,
                     _pos_table: _pos_table,
@@ -335,16 +397,16 @@ static class NinaILCompiler {
                 g.MarkLabel(returnLabel);
                 g.Emit(OpCodes.Ldloc, returnReg);
                 g.Emit(OpCodes.Ret);
-                
-                cl.CreateType();
-                _g.Emit(OpCodes.Ldnull);
-                _g.Emit(OpCodes.Ldftn, mb);
-                _g.Emit(
-                    OpCodes.Newobj,
-                    typeof(Func<object[], object>).GetConstructors()[0]
-                );
-                _g.Emit(OpCodes.Dup);
-                _g.Emit(OpCodes.Stsfld, fb_self);
+
+                Type clTp = cl.CreateType() !;
+                _g.Emit(OpCodes.Newobj, cl.GetConstructors()[0]);
+                for (int i = 0; i < outs_handled.Count; ++ i) {
+                    var (oldFld, newFld) = outs_handled.ElementAt(i);
+                    _g.Emit(OpCodes.Dup);
+                    _g.Emit(OpCodes.Ldarg_0);
+                    _g.Emit(OpCodes.Ldfld, oldFld);
+                    _g.Emit(OpCodes.Stfld, newFld);
+                }
             }
             else if (binary.type == NinaOperatorType.Equ) {
                 ANinaASTExpression l = binary.expr_l;
@@ -358,11 +420,10 @@ static class NinaILCompiler {
                         _expr: tmp.expr_l,
                         _globs: _globs,
                         _glob_consts: _glob_consts,
-                        _closure_builder: _closure_builder,
-                        _fields: _fields,
-                        _field_consts: _field_consts,
-                        _locals: _locals,
-                        _local_consts: _local_consts,
+                        _ins: _ins,
+                        _in_consts: _in_consts,
+                        _outs: _outs,
+                        _out_consts: _out_consts,
                         _pos_table: _pos_table,
                         _ss: _ss
                     );
@@ -373,11 +434,10 @@ static class NinaILCompiler {
                         _expr: tmp.expr_r,
                         _globs: _globs,
                         _glob_consts: _glob_consts,
-                        _closure_builder: _closure_builder,
-                        _fields: _fields,
-                        _field_consts: _field_consts,
-                        _locals: _locals,
-                        _local_consts: _local_consts,
+                        _ins: _ins,
+                        _in_consts: _in_consts,
+                        _outs: _outs,
+                        _out_consts: _out_consts,
                         _pos_table: _pos_table,
                         _ss: _ss
                     );
@@ -388,11 +448,10 @@ static class NinaILCompiler {
                         _expr: r,
                         _globs: _globs,
                         _glob_consts: _glob_consts,
-                        _closure_builder: _closure_builder,
-                        _fields: _fields,
-                        _field_consts: _field_consts,
-                        _locals: _locals,
-                        _local_consts: _local_consts,
+                        _ins: _ins,
+                        _in_consts: _in_consts,
+                        _outs: _outs,
+                        _out_consts: _out_consts,
                         _pos_table: _pos_table,
                         _ss: _ss
                     );
@@ -410,11 +469,10 @@ static class NinaILCompiler {
                         _expr: r,
                         _globs: _globs,
                         _glob_consts: _glob_consts,
-                        _closure_builder: _closure_builder,
-                        _fields: _fields,
-                        _field_consts: _field_consts,
-                        _locals: _locals,
-                        _local_consts: _local_consts,
+                        _ins: _ins,
+                        _in_consts: _in_consts,
+                        _outs: _outs,
+                        _out_consts: _out_consts,
                         _pos_table: _pos_table,
                         _ss: _ss
                     );
@@ -424,11 +482,10 @@ static class NinaILCompiler {
                         _g: _g,
                         _globs: _globs,
                         _glob_consts: _glob_consts,
-                        _closure_builder: _closure_builder,
-                        _fields: _fields,
-                        _field_consts: _field_consts,
-                        _locals: _locals,
-                        _local_consts: _local_consts,
+                        _ins: _ins,
+                        _in_consts: _in_consts,
+                        _outs: _outs,
+                        _out_consts: _out_consts,
                         _isSetting: true,
                         _pos_table: _pos_table,
                         _ss: _ss
@@ -446,11 +503,10 @@ static class NinaILCompiler {
                     _expr: binary.expr_l,
                     _globs: _globs,
                     _glob_consts: _glob_consts,
-                    _closure_builder: _closure_builder,
-                    _fields: _fields,
-                    _field_consts: _field_consts,
-                    _locals: _locals,
-                    _local_consts: _local_consts,
+                    _ins: _ins,
+                    _in_consts: _in_consts,
+                    _outs: _outs,
+                    _out_consts: _out_consts,
                     _pos_table: _pos_table,
                     _ss: _ss
                 );
@@ -461,11 +517,10 @@ static class NinaILCompiler {
                     _expr: binary.expr_r,
                     _globs: _globs,
                     _glob_consts: _glob_consts,
-                    _closure_builder: _closure_builder,
-                    _fields: _fields,
-                    _field_consts: _field_consts,
-                    _locals: _locals,
-                    _local_consts: _local_consts,
+                    _ins: _ins,
+                    _in_consts: _in_consts,
+                    _outs: _outs,
+                    _out_consts: _out_consts,
                     _pos_table: _pos_table,
                     _ss: _ss
                 );
@@ -504,11 +559,10 @@ static class NinaILCompiler {
                             _expr: tmp2.expr_l,
                             _globs: _globs,
                             _glob_consts: _glob_consts,
-                            _closure_builder: _closure_builder,
-                            _fields: _fields,
-                            _field_consts: _field_consts,
-                            _locals: _locals,
-                            _local_consts: _local_consts,
+                            _ins: _ins,
+                            _in_consts: _in_consts,
+                            _outs: _outs,
+                            _out_consts: _out_consts,
                             _pos_table: _pos_table,
                             _ss: _ss
                         );
@@ -521,11 +575,10 @@ static class NinaILCompiler {
                             _expr: tmp2.expr_r,
                             _globs: _globs,
                             _glob_consts: _glob_consts,
-                            _closure_builder: _closure_builder,
-                            _fields: _fields,
-                            _field_consts: _field_consts,
-                            _locals: _locals,
-                            _local_consts: _local_consts,
+                            _ins: _ins,
+                            _in_consts: _in_consts,
+                            _outs: _outs,
+                            _out_consts: _out_consts,
                             _pos_table: _pos_table,
                             _ss: _ss
                         );
@@ -543,11 +596,10 @@ static class NinaILCompiler {
                             _expr: binary.expr_l,
                             _globs: _globs,
                             _glob_consts: _glob_consts,
-                            _closure_builder: _closure_builder,
-                            _fields: _fields,
-                            _field_consts: _field_consts,
-                            _locals: _locals,
-                            _local_consts: _local_consts,
+                            _ins: _ins,
+                            _in_consts: _in_consts,
+                            _outs: _outs,
+                            _out_consts: _out_consts,
                             _pos_table: _pos_table,
                             _ss: _ss
                         );
@@ -562,11 +614,10 @@ static class NinaILCompiler {
                                 ),
                                 _globs: _globs,
                                 _glob_consts: _glob_consts,
-                                _closure_builder: _closure_builder,
-                                _fields: _fields,
-                                _field_consts: _field_consts,
-                                _locals: _locals,
-                                _local_consts: _local_consts,
+                                _ins: _ins,
+                                _in_consts: _in_consts,
+                                _outs: _outs,
+                                _out_consts: _out_consts,
                                 _pos_table: _pos_table,
                                 _ss: _ss
                             );
@@ -576,17 +627,6 @@ static class NinaILCompiler {
                         }
                         _g.Emit(OpCodes.Stloc, tmp);
                     }
-                    _g.Emit(OpCodes.Dup);
-                    _g.Emit(OpCodes.Isinst, typeof(Func<object[], object>));
-                    Label label = _g.DefineLabel();
-                    _g.Emit(OpCodes.Brtrue, label);
-                    _g.Emit(OpCodes.Ldstr, "invalid function to call.");
-                    _g.Emit(OpCodes.Ldc_I4, 949921);
-                    _g.Emit(OpCodes.Ldstr, binary.pos.file);
-                    _g.Emit(OpCodes.Ldc_I4, binary.pos.line);
-                    _g.Emit(OpCodes.Ldc_I4, binary.pos.col);
-                    _g.Emit(OpCodes.Call, typeof(NinaAPIUtil).GetMethod("error_full") !);
-                    _g.MarkLabel(label);
                     _g.Emit(OpCodes.Ldc_I4, args.Count + 1);
                     _g.Emit(OpCodes.Newarr, typeof(object));
                     _g.Emit(OpCodes.Dup);
@@ -600,11 +640,10 @@ static class NinaILCompiler {
                             _expr: args[0],
                             _globs: _globs,
                             _glob_consts: _glob_consts,
-                            _closure_builder: _closure_builder,
-                            _fields: _fields,
-                            _field_consts: _field_consts,
-                            _locals: _locals,
-                            _local_consts: _local_consts,
+                            _ins: _ins,
+                            _in_consts: _in_consts,
+                            _outs: _outs,
+                            _out_consts: _out_consts,
                             _pos_table: _pos_table,
                             _ss: _ss
                         );
@@ -625,22 +664,18 @@ static class NinaILCompiler {
                             _expr: v,
                             _globs: _globs,
                             _glob_consts: _glob_consts,
-                            _closure_builder: _closure_builder,
-                            _fields: _fields,
-                            _field_consts: _field_consts,
-                            _locals: _locals,
-                            _local_consts: _local_consts,
+                            _ins: _ins,
+                            _in_consts: _in_consts,
+                            _outs: _outs,
+                            _out_consts: _out_consts,
                             _pos_table: _pos_table,
                             _ss: _ss
                         );
                         _g.Emit(OpCodes.Stelem_Ref);
                     }
                     
-                    _g.EmitCall(
-                        opcode: OpCodes.Callvirt,
-                        methodInfo: typeof(Func<object[], object>).GetMethod("Invoke") !,
-                        optionalParameterTypes: null
-                    );
+                    _g.Emit(OpCodes.Call,
+                        typeof(NinaAPIUtil).GetMethod("func_invoke") !);
                 }
                 else {
                     if (args.Count != inner!.GetParameters().Count()) {
@@ -658,11 +693,10 @@ static class NinaILCompiler {
                             _expr: v,
                             _globs: _globs,
                             _glob_consts: _glob_consts,
-                            _closure_builder: _closure_builder,
-                            _fields: _fields,
-                            _field_consts: _field_consts,
-                            _locals: _locals,
-                            _local_consts: _local_consts,
+                            _ins: _ins,
+                            _in_consts: _in_consts,
+                            _outs: _outs,
+                            _out_consts: _out_consts,
                             _pos_table: _pos_table,
                             _ss: _ss
                         );
@@ -707,11 +741,10 @@ static class NinaILCompiler {
                             ),
                             _globs: _globs,
                             _glob_consts: _glob_consts,
-                            _closure_builder: _closure_builder,
-                            _fields: _fields,
-                            _field_consts: _field_consts,
-                            _locals: _locals,
-                            _local_consts: _local_consts,
+                            _ins: _ins,
+                            _in_consts: _in_consts,
+                            _outs: _outs,
+                            _out_consts: _out_consts,
                             _pos_table: _pos_table,
                             _ss: _ss
                         );
@@ -722,11 +755,10 @@ static class NinaILCompiler {
                             _expr: val,
                             _globs: _globs,
                             _glob_consts: _glob_consts,
-                            _closure_builder: _closure_builder,
-                            _fields: _fields,
-                            _field_consts: _field_consts,
-                            _locals: _locals,
-                            _local_consts: _local_consts,
+                            _ins: _ins,
+                            _in_consts: _in_consts,
+                            _outs: _outs,
+                            _out_consts: _out_consts,
                             _pos_table: _pos_table,
                             _ss: _ss
                         );
@@ -759,11 +791,10 @@ static class NinaILCompiler {
                         ),
                         _globs: _globs,
                         _glob_consts: _glob_consts,
-                        _closure_builder: _closure_builder,
-                        _fields: _fields,
-                        _field_consts: _field_consts,
-                        _locals: _locals,
-                        _local_consts: _local_consts,
+                        _ins: _ins,
+                        _in_consts: _in_consts,
+                        _outs: _outs,
+                        _out_consts: _out_consts,
                         _pos_table: _pos_table,
                         _ss: _ss
                     );
@@ -774,11 +805,10 @@ static class NinaILCompiler {
                         _expr: v,
                         _globs: _globs,
                         _glob_consts: _glob_consts,
-                        _closure_builder: _closure_builder,
-                        _fields: _fields,
-                        _field_consts: _field_consts,
-                        _locals: _locals,
-                        _local_consts: _local_consts,
+                        _ins: _ins,
+                        _in_consts: _in_consts,
+                        _outs: _outs,
+                        _out_consts: _out_consts,
                         _pos_table: _pos_table,
                         _ss: _ss
                     );
@@ -807,20 +837,15 @@ static class NinaILCompiler {
             NinaASTBlockExpression _block,
             Dictionary<string, FieldInfo> _globs,
             Dictionary<string, FieldInfo> _glob_consts,
-            Dictionary<string, FieldInfo> _fields,
-            Dictionary<string, FieldInfo> _field_consts,
-            Dictionary<string, LocalBuilder> _locals,
-            Dictionary<string, LocalBuilder> _local_consts,
+            Dictionary<string, FieldInfo> _outs,
+            Dictionary<string, FieldInfo> _out_consts,
+            List<string> _ins,
+            List<string> _in_consts,
             Dictionary<string, List<(int, NinaErrorPosition)>> _pos_table,
             string _ss,
             LocalBuilder _returnReg, Label _returnLabel,
-            Label? _label_break = null, Label? _label_continue = null,
-            TypeBuilder? _closure_builder = null) {
+            Label? _label_break = null, Label? _label_continue = null) {
         List<ANinaASTStatement> stms = _block.stms;
-        Dictionary<string, FieldInfo> fields
-            = new Dictionary<string, FieldInfo>(_fields);
-        Dictionary<string, FieldInfo> field_consts
-            = new Dictionary<string, FieldInfo>(_field_consts);
         for (int i = 0; i < stms.Count; ++ i) {
             ANinaASTStatement v = stms[i];
             compile_stm(
@@ -830,11 +855,10 @@ static class NinaILCompiler {
                 _stm: v,
                 _globs: _globs,
                 _glob_consts: _glob_consts,
-                _closure_builder: _closure_builder,
-                _fields: fields,
-                _field_consts: field_consts,
-                _locals: _locals,
-                _local_consts: _local_consts,
+                _ins: _ins,
+                _in_consts: _in_consts,
+                _outs: _outs,
+                _out_consts: _out_consts,
                 _returnReg: _returnReg,
                 _returnLabel: _returnLabel,
                 _label_break: _label_break,
@@ -850,15 +874,14 @@ static class NinaILCompiler {
             ANinaASTStatement _stm,
             Dictionary<string, FieldInfo> _globs,
             Dictionary<string, FieldInfo> _glob_consts,
-            Dictionary<string, FieldInfo> _fields,
-            Dictionary<string, FieldInfo> _field_consts,
-            Dictionary<string, LocalBuilder> _locals,
-            Dictionary<string, LocalBuilder> _local_consts,
+            Dictionary<string, FieldInfo> _outs,
+            Dictionary<string, FieldInfo> _out_consts,
+            List<string> _ins,
+            List<string> _in_consts,
             Dictionary<string, List<(int, NinaErrorPosition)>> _pos_table,
             string _ss,
             LocalBuilder _returnReg, Label _returnLabel,
-            Label? _label_break = null, Label? _label_continue = null,
-            TypeBuilder? _closure_builder = null) {
+            Label? _label_break = null, Label? _label_continue = null) {
         if (_stm is NinaASTExpressionStatement expr) {
             compile_expr(
                 _mb: _mb,
@@ -867,11 +890,10 @@ static class NinaILCompiler {
                 _expr: expr.expr !,
                 _globs: _globs,
                 _glob_consts: _glob_consts,
-                _closure_builder: _closure_builder,
-                _fields: _fields,
-                _field_consts: _field_consts,
-                _locals: _locals,
-                _local_consts: _local_consts,
+                _ins: _ins,
+                _in_consts: _in_consts,
+                _outs: _outs,
+                _out_consts: _out_consts,
                 _pos_table: _pos_table,
                 _ss: _ss
             );
@@ -880,44 +902,49 @@ static class NinaILCompiler {
         else if (_stm is NinaASTVarStatement vars) {
             List<(string, ANinaASTExpression?)> list
                 = vars.vars.list;
-            var dic = ! vars.isGlobal
-                ? (vars.isConst ? _field_consts : _fields)
-                : (vars.isConst ? _glob_consts : _globs);
             for (int i = 0; i < list.Count; ++ i) {
                 var (id, init) = list[i];
-                FieldBuilder builder = (
-                    ! vars.isGlobal
-                        ? _closure_builder !
-                        : _cl
-                )
-                .DefineField(
-                    fieldName: NinaConstsProviderUtil.IL_CLOSURECLASS_FIELD_PREFIX
-                        + Guid.NewGuid().ToString("N"),
-                    type: typeof(object),
-                    attributes: FieldAttributes.Public | FieldAttributes.Static
-                );
-                dic[id] = builder;
-                if (init != null) {
-                    compile_expr(
-                        _mb: _mb,
-                        _cl: _cl,
-                        _g: _g,
-                        _expr: init,
-                        _globs: _globs,
-                        _glob_consts: _glob_consts,
-                        _closure_builder: _closure_builder,
-                        _fields: _fields,
-                        _field_consts: _field_consts,
-                        _locals: _locals,
-                        _local_consts: _local_consts,
-                        _pos_table: _pos_table,
-                        _ss: _ss
-                    );
+                var doit = () => {
+                    if (init != null) {
+                        compile_expr(
+                            _mb: _mb,
+                            _cl: _cl,
+                            _g: _g,
+                            _expr: init,
+                            _globs: _globs,
+                            _glob_consts: _glob_consts,
+                            _ins: _ins,
+                            _in_consts: _in_consts,
+                            _outs: _outs,
+                            _out_consts: _out_consts,
+                            _pos_table: _pos_table,
+                            _ss: _ss
+                        );
+                    }
+                    else {
+                        _g.Emit(OpCodes.Ldnull);
+                    }
+                };
+                if (vars.isGlobal) {
+                    FieldBuilder builder
+                        = _cl.DefineField(
+                            fieldName: NinaConstsProviderUtil.IL_CLOSURECLASS_FIELD_PREFIX
+                                + Guid.NewGuid().ToString("N"),
+                            type: typeof(object),
+                            attributes: FieldAttributes.Public | FieldAttributes.Static
+                        );
+                    (vars.isConst ? _glob_consts : _globs)[id] = builder;
+                    doit();
+                    _g.Emit(OpCodes.Stsfld, builder);
                 }
                 else {
-                    _g.Emit(OpCodes.Ldnull);
+                    _g.Emit(OpCodes.Ldloc, vars.isConst ? 1 : 0);
+                    doit();
+                    _g.Emit(
+                        OpCodes.Call,
+                        typeof(List<object>).GetMethod("Add") !
+                    );
                 }
-                _g.Emit(OpCodes.Stsfld, builder);
             }
         }
         else if (_stm is NinaASTIfStatement ifs) {
@@ -928,11 +955,10 @@ static class NinaILCompiler {
                 _expr: ifs.expr !,
                 _globs: _globs,
                 _glob_consts: _glob_consts,
-                _closure_builder: _closure_builder,
-                _fields: _fields,
-                _field_consts: _field_consts,
-                _locals: _locals,
-                _local_consts: _local_consts,
+                _ins: _ins,
+                _in_consts: _in_consts,
+                _outs: _outs,
+                _out_consts: _out_consts,
                 _pos_table: _pos_table,
                 _ss: _ss
             );
@@ -945,11 +971,10 @@ static class NinaILCompiler {
                 _block: ifs.block !,
                 _globs: _globs,
                 _glob_consts: _glob_consts,
-                _closure_builder: _closure_builder,
-                _fields: _fields,
-                _field_consts: _field_consts,
-                _locals: _locals,
-                _local_consts: _local_consts,
+                _ins: _ins,
+                _in_consts: _in_consts,
+                _outs: _outs,
+                _out_consts: _out_consts,
                 _returnReg: _returnReg,
                 _returnLabel: _returnLabel,
                 _label_break: _label_break,
@@ -968,11 +993,10 @@ static class NinaILCompiler {
                     _block: ifs.block_else !,
                     _globs: _globs,
                     _glob_consts: _glob_consts,
-                    _closure_builder: _closure_builder,
-                    _fields: _fields,
-                    _field_consts: _field_consts,
-                    _locals: _locals,
-                    _local_consts: _local_consts,
+                    _ins: _ins,
+                    _in_consts: _in_consts,
+                    _outs: _outs,
+                    _out_consts: _out_consts,
                     _returnReg: _returnReg,
                     _returnLabel: _returnLabel,
                     _label_break: _label_break,
@@ -994,11 +1018,10 @@ static class NinaILCompiler {
                 _expr: whiles.expr !,
                 _globs: _globs,
                 _glob_consts: _glob_consts,
-                _closure_builder: _closure_builder,
-                _fields: _fields,
-                _field_consts: _field_consts,
-                _locals: _locals,
-                _local_consts: _local_consts,
+                _ins: _ins,
+                _in_consts: _in_consts,
+                _outs: _outs,
+                _out_consts: _out_consts,
                 _pos_table: _pos_table,
                 _ss: _ss
             );
@@ -1010,11 +1033,10 @@ static class NinaILCompiler {
                 _block: whiles.block !,
                 _globs: _globs,
                 _glob_consts: _glob_consts,
-                _closure_builder: _closure_builder,
-                _fields: _fields,
-                _field_consts: _field_consts,
-                _locals: _locals,
-                _local_consts: _local_consts,
+                _ins: _ins,
+                _in_consts: _in_consts,
+                _outs: _outs,
+                _out_consts: _out_consts,
                 _returnReg: _returnReg,
                 _returnLabel: _returnLabel,
                 _label_break: label_end,
@@ -1035,11 +1057,10 @@ static class NinaILCompiler {
                         _expr: words.expr,
                         _globs: _globs,
                         _glob_consts: _glob_consts,
-                        _closure_builder: _closure_builder,
-                        _fields: _fields,
-                        _field_consts: _field_consts,
-                        _locals: _locals,
-                        _local_consts: _local_consts,
+                        _ins: _ins,
+                        _in_consts: _in_consts,
+                        _outs: _outs,
+                        _out_consts: _out_consts,
                         _pos_table: _pos_table,
                         _ss: _ss
                     );
@@ -1069,11 +1090,10 @@ static class NinaILCompiler {
                 _block: trys.block !,
                 _globs: _globs,
                 _glob_consts: _glob_consts,
-                _closure_builder: _closure_builder,
-                _fields: _fields,
-                _field_consts: _field_consts,
-                _locals: _locals,
-                _local_consts: _local_consts,
+                _ins: _ins,
+                _in_consts: _in_consts,
+                _outs: _outs,
+                _out_consts: _out_consts,
                 _returnReg: _returnReg,
                 _returnLabel: _returnLabel,
                 _pos_table: _pos_table,
@@ -1081,15 +1101,13 @@ static class NinaILCompiler {
             );
             _g.BeginCatchBlock(typeof(Exception));
             if (trys.block_catch != null) {
-                FieldBuilder exReg = (
-                    _closure_builder ?? _cl
-                )
-                .DefineField(
-                    fieldName: NinaConstsProviderUtil.IL_BUILTIN_ID_PREFIX
-                        + Guid.NewGuid().ToString("N"),
-                    type: typeof(object),
-                    attributes: FieldAttributes.Public | FieldAttributes.Static
-                );
+                FieldBuilder exReg
+                    = _cl.DefineField(
+                        fieldName: NinaConstsProviderUtil.IL_BUILTIN_ID_PREFIX
+                            + Guid.NewGuid().ToString("N"),
+                        type: typeof(object),
+                        attributes: FieldAttributes.Public | FieldAttributes.Static
+                    );
                 _globs["exception"] = exReg;
                 _g.Emit(OpCodes.Ldstr, trys.pos.file);
                 _g.Emit(OpCodes.Call, typeof(NinaAPIUtil).GetMethod("convert_ex") !);
@@ -1101,11 +1119,10 @@ static class NinaILCompiler {
                     _block: trys.block_catch,
                     _globs: _globs,
                     _glob_consts: _glob_consts,
-                    _closure_builder: _closure_builder,
-                    _fields: _fields,
-                    _field_consts: _field_consts,
-                    _locals: _locals,
-                    _local_consts: _local_consts,
+                    _ins: _ins,
+                    _in_consts: _in_consts,
+                    _outs: _outs,
+                    _out_consts: _out_consts,
                     _returnReg: _returnReg,
                     _returnLabel: _returnLabel,
                     _pos_table: _pos_table,
@@ -1219,9 +1236,9 @@ static class NinaILCompiler {
             Dictionary<string, FieldInfo> _globs,
             Dictionary<string, FieldInfo> _glob_consts,
             Dictionary<string, List<(int, NinaErrorPosition)>> _pos_table) {
-        Dictionary<string, LocalBuilder> locals
+        Dictionary<string, LocalBuilder> outs
             = new Dictionary<string, LocalBuilder>();
-        Dictionary<string, LocalBuilder> local_consts
+        Dictionary<string, LocalBuilder> out_consts
             = new Dictionary<string, LocalBuilder>();
         
         LocalBuilder returnReg = _g.DeclareLocal(typeof(object));
@@ -1234,15 +1251,12 @@ static class NinaILCompiler {
             _block: _block,
             _globs: _globs,
             _glob_consts: _glob_consts,
-            _closure_builder: null,
-            _fields:
+            _ins: new List<string>(),
+            _in_consts: new List<string>(),
+            _outs:
                 new Dictionary<string, FieldInfo>(),
-            _field_consts:
+            _out_consts:
                 new Dictionary<string, FieldInfo>(),
-            _locals:
-                new Dictionary<string, LocalBuilder>(),
-            _local_consts:
-                new Dictionary<string, LocalBuilder>(),
             _returnReg: returnReg,
             _returnLabel: returnLabel,
             _pos_table: _pos_table,
@@ -1301,15 +1315,15 @@ static class NinaILCompiler {
         globs["this"] = defaultThis;
         globs["self"] = defaultSelf;
         globs["argument"] = defaultArgument;
-        init_apis(
-            _file: _block.pos.file,
-            _tb: tb,
-            _mb: mtdb,
-            _g: mg,
-            _globs: globs,
-            _glob_consts: glob_consts,
-            _pos_table: pos_table
-        );
+        // init_apis(
+        //     _file: _block.pos.file,
+        //     _tb: tb,
+        //     _mb: mtdb,
+        //     _g: mg,
+        //     _globs: globs,
+        //     _glob_consts: glob_consts,
+        //     _pos_table: pos_table
+        // );
         
         compile_main(
             _mb: mb,
