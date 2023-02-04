@@ -1340,15 +1340,15 @@ static class NinaILCompiler {
         globs["this"] = defaultThis;
         globs["self"] = defaultSelf;
         globs["argument"] = defaultArgument;
-        // init_apis(
-        //     _file: _block.pos.file,
-        //     _tb: tb,
-        //     _mb: mtdb,
-        //     _g: mg,
-        //     _globs: globs,
-        //     _glob_consts: glob_consts,
-        //     _pos_table: pos_table
-        // );
+        init_apis(
+            _file: _block.pos.file,
+            _tb: tb,
+            _mb: mtdb,
+            _g: mg,
+            _globs: globs,
+            _glob_consts: glob_consts,
+            _pos_table: pos_table
+        );
         
         compile_main(
             _mb: mb,
