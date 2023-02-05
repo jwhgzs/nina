@@ -648,6 +648,14 @@ static class NinaILCompiler {
                         }
                         _g.Emit(OpCodes.Stloc, tmp);
                     }
+                    _g.Emit(OpCodes.Isinst, typeof(Func<List<object>, object>));
+                    _g.Emit(OpCodes.Dup);
+                    Label ok = _g.DefineLabel();
+                    _g.Emit(OpCodes.Brtrue, ok);
+                    _g.Emit(OpCodes.Ldstr, "无效的方法调用操作.");
+                    _g.Emit(OpCodes.Ldc_I4, 759541);
+                    _g.Emit(OpCodes.Call, typeof(NinaAPIUtil).GetMethod("error") !);
+                    _g.MarkLabel(ok);
                     _g.Emit(OpCodes.Newobj,
                         typeof(List<object>).GetConstructor(new Type[0]) !);
                     _g.Emit(OpCodes.Dup);
