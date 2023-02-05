@@ -48,7 +48,7 @@ func fibo(n) {
 var t1 = time_now();
 // 输出结果和耗时
 console_printf('fibo(33) = ' + fibo(33));
-console_printf('time: ' + (time_now() - t1) * 1000 + ' ms');
+console_printf('耗时：' + (time_now() - t1) * 1000 + ' ms');
 ```
 这是一段计算斐波那契数的Nina代码。事实上，如果把关键字`func`改为`function`，这就是一段正经的的JavaScript代码！
 
