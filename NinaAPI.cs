@@ -3,7 +3,6 @@ using System.Text.Json.Serialization;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Diagnostics;
 
 namespace Nina;
@@ -157,7 +156,7 @@ public static class NinaAPIUtil {
         return toBool(_lhs) ? _lhs : _rhs;
     }
     public static object opNot(object _o) {
-        return ~ (int) toNumber(_o);
+        return (double) (~ (int) toNumber(_o));
     }
     public static object opAnd(object _lhs, object _rhs) {
         return (double) ((int) toNumber(_lhs) & (int) toNumber(_rhs));
@@ -340,6 +339,10 @@ public static class NinaAPI {
                 352982
             );
         }
+        return null !;
+    }
+    public static object @throw(object _msg) {
+        NinaError.error("用户自定义的异常：\n" + _msg, - 1);
         return null !;
     }
     public static object console_print(object _data) {

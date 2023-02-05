@@ -327,7 +327,7 @@ static class NinaILCompiler {
                 g.Emit(OpCodes.Ldloc, dCount);
                 g.Emit(OpCodes.Ldc_I4_0);
                 Label tmp = g.DefineLabel();
-                g.Emit(OpCodes.Blt, tmp);
+                g.Emit(OpCodes.Ble, tmp);
                 g.Emit(OpCodes.Ldloc_0);
                 g.Emit(OpCodes.Ldc_I4, plistCount);
                 g.Emit(OpCodes.Ldloc, dCount);
@@ -651,6 +651,12 @@ static class NinaILCompiler {
                     _g.Emit(OpCodes.Newobj,
                         typeof(List<object>).GetConstructor(new Type[0]) !);
                     _g.Emit(OpCodes.Dup);
+                    _g.Emit(OpCodes.Ldc_I4,
+                        args.Count * NinaConstsProviderUtil.IL_LOCALLIST_ENSURETIMES);
+                    _g.Emit(OpCodes.Call,
+                        typeof(List<object>).GetMethod("EnsureCapacity") !);
+                    _g.Emit(OpCodes.Pop);
+                    _g.Emit(OpCodes.Dup);
                     if (args.Count > 0 && args[0].annos.Contains(
                             NinaConstsProviderUtil.NINA_ANNO_SPECIALARG)) {
                         compile_expr(
@@ -672,8 +678,7 @@ static class NinaILCompiler {
                     else {
                         _g.Emit(OpCodes.Ldloc, tmp);
                     }
-                    _g.Emit(OpCodes.Call,
-                        typeof(List<object>).GetMethod("Add") !);
+                    _g.Emit(OpCodes.Call, typeof(List<object>).GetMethod("Add") !);
                     for (int i = 0; i < args.Count; ++ i) {
                         ANinaASTExpression v = args[i];
                         _g.Emit(OpCodes.Dup);
@@ -1096,8 +1101,14 @@ static class NinaILCompiler {
                 else {
                     _g.Emit(OpCodes.Ldnull);
                 }
-                _g.Emit(OpCodes.Stloc, _returnReg);
-                _g.Emit(OpCodes.Leave, _returnLabel);
+                if (words.annos.Contains(
+                        NinaConstsProviderUtil.NINA_ANNO_SPECIALRETURN)) {
+                    _g.Emit(OpCodes.Stloc, _returnReg);
+                    _g.Emit(OpCodes.Leave, _returnLabel);
+                }
+                else {
+                    _g.Emit(OpCodes.Ret);
+                }
             }
             else if (words.type == NinaKeywordType.Break) {
                 _g.Emit(OpCodes.Br, (Label) _label_break !);

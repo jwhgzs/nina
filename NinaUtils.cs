@@ -5,12 +5,14 @@ namespace Nina;
 static class NinaConstsProviderUtil {
     public const string NINA_ID_PREFIX = "NinaGlobal__";
     public const string NINA_ANNO_SPECIALARG = "NINA_ANNO_SPECIALARG";
+    public const string NINA_ANNO_SPECIALRETURN = "NINA_ANNO_SPECIALRETURN";
     public const string CSHARP_NINAAPI_PREFIX = "NinaAPI__";
     public const string CSHARP_NINAAPIUTIL_PREFIX = "NinaAPIUtil__";
     public const string IL_ENTRYCLASS_ID = "NinaEntry";
     public const string IL_BUILTIN_ID_PREFIX = "NINA_BUILTIN_";
     public const string IL_CLOSURECLASS_ID_PREFIX = "NINA_CLOSURECLASS_";
     public const string IL_CLOSURECLASS_FIELD_PREFIX = "NINA_CLOSURECLASS_FIELD_";
+    public const int IL_LOCALLIST_ENSURETIMES = 2;
 }
 
 static class NinaCodeBlockUtil {
@@ -59,7 +61,9 @@ static class NinaCodeBlockUtil {
         ["^"] = NinaOperatorType.XOr,
         ["~"] = NinaOperatorType.Not,
         ["&&"] = NinaOperatorType.LAnd,
+        ["?"] = NinaOperatorType.LAnd,
         ["||"] = NinaOperatorType.LOr,
+        [":"] = NinaOperatorType.LOr,
         ["!"] = NinaOperatorType.LNot,
         ["=="] = NinaOperatorType.LEqu,
         ["!="] = NinaOperatorType.LNEqu,
@@ -96,7 +100,9 @@ static class NinaCodeBlockUtil {
         ['!'] = NinaOperatorType.LNot,
         ['>'] = NinaOperatorType.More,
         ['<'] = NinaOperatorType.Less,
-        ['@'] = NinaOperatorType.At
+        ['@'] = NinaOperatorType.At,
+        ['?'] = NinaOperatorType.LAnd,
+        [':'] = NinaOperatorType.LOr
     };
     public static Dictionary<NinaOperatorType, int> operatorsRank
             = new Dictionary<NinaOperatorType, int> {

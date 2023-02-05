@@ -517,13 +517,17 @@ static class NinaCompiler {
                         );
                     }
                     else {
-                        block.stms.Add(
-                            new NinaASTWordStatement(
-                                _type: NinaKeywordType.Return,
-                                _expr: expr,
-                                _pos: expr.pos
-                            )
+                        NinaASTWordStatement words = new NinaASTWordStatement(
+                            _type: NinaKeywordType.Return,
+                            _expr: expr,
+                            _pos: expr.pos
                         );
+                        if ((_scope & NinaScopeType.Function) != NinaScopeType.Function
+                                || (_scope & NinaScopeType.Try) == NinaScopeType.Try
+                                || (_scope & NinaScopeType.Catch) == NinaScopeType.Catch) {
+                            words.annos.Add(NinaConstsProviderUtil.NINA_ANNO_SPECIALRETURN);
+                        }
+                        block.stms.Add(words);
                     }
                 }
                 else if (v.val_kw == NinaKeywordType.Break
