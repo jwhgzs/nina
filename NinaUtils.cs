@@ -4,10 +4,12 @@ namespace Nina;
 
 static class NinaConstsProviderUtil {
     public const string NINA_ID_PREFIX = "NinaGlobal__";
+    public const string NINA_APIUTIL_OPERATOR_PREFIX = "op";
+    public const string NINA_APIUTIL_CONVERTION_PREFIX = "to";
     public const string NINA_ANNO_SPECIALARG = "NINA_ANNO_SPECIALARG";
     public const string NINA_ANNO_SPECIALRETURN = "NINA_ANNO_SPECIALRETURN";
-    public const string CSHARP_NINAAPI_PREFIX = "NinaAPI__";
-    public const string CSHARP_NINAAPIUTIL_PREFIX = "NinaAPIUtil__";
+    public const string IL_ASSEMBLY_ID = "NinaRuntime";
+    public const string IL_MODULE_ID = "NinaRuntimeModule";
     public const string IL_ENTRYCLASS_ID = "NinaEntry";
     public const string IL_BUILTIN_ID_PREFIX = "NINA_BUILTIN_";
     public const string IL_CLOSURECLASS_ID_PREFIX = "NINA_CLOSURECLASS_";
@@ -35,7 +37,9 @@ static class NinaCodeBlockUtil {
         ["break"] = NinaKeywordType.Break,
         ["continue"] = NinaKeywordType.Continue,
         ["try"] = NinaKeywordType.Try,
-        ["catch"] = NinaKeywordType.Catch
+        ["catch"] = NinaKeywordType.Catch,
+        ["with"] = NinaKeywordType.With,
+        ["without"] = NinaKeywordType.Without
     };
     public static List<string> specialIdentifiers
             = new List<string> {
@@ -145,20 +149,26 @@ static class NinaCodeBlockUtil {
     };
     public static List<NinaOperatorType> operators_unarys
             = new List<NinaOperatorType>() {
-                NinaOperatorType.Not,
-                NinaOperatorType.Pos,
-                NinaOperatorType.Neg,
-                NinaOperatorType.LNot,
-                NinaOperatorType.Typeof,
-                NinaOperatorType.Object,
-                NinaOperatorType.Array,
-                NinaOperatorType.At
-            };
+        NinaOperatorType.Not,
+        NinaOperatorType.Pos,
+        NinaOperatorType.Neg,
+        NinaOperatorType.LNot,
+        NinaOperatorType.Typeof,
+        NinaOperatorType.Object,
+        NinaOperatorType.Array,
+        NinaOperatorType.At
+    };
     public static Dictionary<NinaOperatorType, NinaOperatorType> operators_vagues
             = new Dictionary<NinaOperatorType, NinaOperatorType>() {
-                [NinaOperatorType.Add] = NinaOperatorType.Pos,
-                [NinaOperatorType.Sub] = NinaOperatorType.Neg
-            };
+        [NinaOperatorType.Add] = NinaOperatorType.Pos,
+        [NinaOperatorType.Sub] = NinaOperatorType.Neg
+    };
+    public static Dictionary<string, NinaWithStatementTypes> withStatementTypes
+            = new Dictionary<string, NinaWithStatementTypes> {
+        ["strict"] = NinaWithStatementTypes.Strict,
+        ["chinese"] = NinaWithStatementTypes.Chinese
+    };
+
     public static bool supposeSymbol(char _ch, out NinaSymbolType _out) {
         return symbols.TryGetValue(_ch, out _out);
     }

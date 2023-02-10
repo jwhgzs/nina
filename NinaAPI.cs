@@ -13,8 +13,7 @@ public class NinaDataArray: List<object> {
             : base(_src) {}
 }
 public class NinaDataObject: Dictionary<string, object> {
-    public Dictionary<string, bool> my_consts
-        = new Dictionary<string, bool>();
+    public HashSet<string> my_consts = new HashSet<string>();
     public NinaDataObject(): base() {}
     public NinaDataObject(Dictionary<string, object> _src)
             : base(_src) {}
@@ -205,7 +204,7 @@ public static class NinaAPIUtil {
         }
         else if (_obj is NinaDataObject obj) {
             string key = toString(_key);
-            if (obj.my_consts.ContainsKey(key) && _allowSetConst == 0) {
+            if (obj.my_consts.Contains(key) && _allowSetConst == 0) {
                 NinaError.error(
                     "无法给常量成员重新赋值.",
                     794922
@@ -213,7 +212,7 @@ public static class NinaAPIUtil {
             }
             obj[key] = _val;
             if (_isConst != 0)
-                obj.my_consts[key] = true;
+                obj.my_consts.Add(key);
         }
         else {
             NinaError.error("成员赋值的操作对象无效.", 426694);
@@ -328,7 +327,7 @@ public static class NinaAPI {
         string code = NinaAPIUtil.toString(_code);
         try {
             return NinaCore.execute(
-                "[动态代码 " + Guid.NewGuid().ToString("N") + "]",
+                "[动态代码: " + Guid.NewGuid().ToString("N") + "]",
                 code, _arg
             ) !;
         }

@@ -396,17 +396,6 @@ static class NinaCompiler {
                             = new NinaErrorPosition(
                                 v.file, v.line, v.col
                             );
-                        if (v.val_kw != NinaKeywordType.Else) {
-                            expr = new NinaASTBinaryExpression(
-                                _type: NinaOperatorType.BraL,
-                                _expr_l: new NinaASTIdentifierExpression(
-                                    "NinaAPIUtil__toBool",
-                                    tmpPos
-                                ),
-                                _expr_r: expr !,
-                                tmpPos
-                            );
-                        }
                         NinaScopeType nscope;
                         if (v.val_kw == NinaKeywordType.If)
                             nscope = NinaScopeType.If;
@@ -734,6 +723,62 @@ static class NinaCompiler {
                             main.block_catch = body;
                         }
                     }
+                }
+                else if (v.val_kw == NinaKeywordType.With
+                        || v.val_kw == NinaKeywordType.Without) {
+                    HashSet<NinaWithStatementTypes> withs
+                        = new HashSet<NinaWithStatementTypes>();
+                    if (_i + 1 <= _blocks.Count - 1
+                            && _blocks[_i + 1].val_sy != NinaSymbolType.Sem) {
+                        do {
+                            NinaExprTree expr = resolve_expr(
+                                _blocks: _blocks,
+                                _i: ref _i
+                            );
+                            if (expr.type != NinaExprTreeType.Data
+                                    || expr.block.type != NinaCodeBlockType.String) {
+                                NinaError.error(
+                                    "语法模块列表无效.",
+                                    803232,
+                                    new NinaErrorPosition(
+                                        expr.block.file, expr.block.line, expr.block.col
+                                    )
+                                );
+                            }
+                            else if (! NinaCodeBlockUtil.withStatementTypes.ContainsKey(
+                                    expr.block.val_str !)) {
+                                NinaError.error(
+                                    "不存在的无法模块名称.",
+                                    890213,
+                                    new NinaErrorPosition(
+                                        expr.block.file, expr.block.line, expr.block.col
+                                    )
+                                );
+                            }
+                            else {
+                                withs.Add(
+                                    NinaCodeBlockUtil.withStatementTypes
+                                        [expr.block.val_str !]
+                                );
+                            }
+                        }
+                        while (_i < _blocks.Count
+                                && _blocks[_i].val_sy != NinaSymbolType.Sem);
+                    }
+                    else {
+                        NinaError.error(
+                            "语法模块控制语句不能为空.",
+                            459021,
+                            new NinaErrorPosition(v.file, v.line, v.col)
+                        );
+                    }
+                    block.stms.Add(
+                        new NinaASTWithStatement(
+                            _withTypes: withs,
+                            _pos: new NinaErrorPosition(v.file, v.line, v.col),
+                            _isWithout: v.val_kw == NinaKeywordType.Without
+                        )
+                    );
                 }
                 else {
                     NinaError.error(

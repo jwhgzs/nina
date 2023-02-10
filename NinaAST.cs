@@ -190,3 +190,14 @@ class NinaASTTryStatement : ANinaASTStatement {
         block_catch = _block_catch;
     }
 }
+class NinaASTWithStatement : ANinaASTStatement {
+    public bool isWithout;
+    public HashSet<NinaWithStatementTypes> withTypes;
+    public NinaASTWithStatement(
+            HashSet<NinaWithStatementTypes> _withTypes,
+            NinaErrorPosition _pos, bool _isWithout = false)
+            : base(_pos) {
+        withTypes = _withTypes;
+        isWithout = _isWithout;
+    }
+}

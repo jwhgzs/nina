@@ -315,33 +315,12 @@ class NinaExprTree {
                             pos
                         );
                 }
-                else if (block.val_op == NinaOperatorType.LOr
-                        || block.val_op == NinaOperatorType.LAnd) {
+                else {
                     return
                         new NinaASTBinaryExpression(
                             _type: (NinaOperatorType) block.val_op !,
                             _expr_l: expr_l,
                             _expr_r: expr_r,
-                            pos
-                        );
-                }
-                else {
-                    return
-                        new NinaASTBinaryExpression(
-                            _type: NinaOperatorType.BraL,
-                            _expr_l:
-                                new NinaASTIdentifierExpression(
-                                    NinaConstsProviderUtil.CSHARP_NINAAPIUTIL_PREFIX
-                                        + "op"
-                                        + block.val_op.ToString(),
-                                    pos
-                                ),
-                            _expr_r: new NinaASTListExpression(
-                                new List<ANinaASTExpression>() {
-                                    expr_l, expr_r
-                                },
-                                pos
-                            ),
                             pos
                         );
                 }
@@ -407,22 +386,10 @@ class NinaExprTree {
                 }
                 else {
                     return
-                        new NinaASTBinaryExpression(
-                            _type: NinaOperatorType.BraL,
-                            _expr_l:
-                                new NinaASTIdentifierExpression(
-                                    NinaConstsProviderUtil.CSHARP_NINAAPIUTIL_PREFIX
-                                        + "op"
-                                        + block.val_op.ToString(),
-                                    pos
-                                ),
-                            _expr_r: new NinaASTListExpression(
-                                new List<ANinaASTExpression>() {
-                                    expr
-                                },
-                                pos
-                            ),
-                            pos
+                        new NinaASTUnaryExpression(
+                            _type: (NinaOperatorType) block.val_op !,
+                            _expr: expr,
+                            _pos: expr.pos
                         );
                 }
             }

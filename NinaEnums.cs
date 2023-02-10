@@ -4,20 +4,25 @@ enum NinaCodeBlockType {
     None,
     Operator, Symbol, Keyword, Identifier, String, Number
 }
+
 enum NinaExprTreeType {
     None,
     Void, Operator, Data, Placeholder, CompiledBlock
 }
+
 enum NinaSymbolType {
     None,
     Sem, CBraL, CBraR
 }
+
 enum NinaKeywordType {
     None,
     Var, Const, Func,
     If, Else, Elseif, While, Return, Break, Continue,
-    Try, Catch
+    Try, Catch,
+    With, Without
 }
+
 enum NinaOperatorType {
     None,
     Com, Equ,
@@ -28,6 +33,7 @@ enum NinaOperatorType {
     Not, LNot, Pos, Neg, Typeof, Object, Array, At,
     BraL, BraR, MBraL, MBraR, Dot, Arr
 }
+
 enum NinaScopeType {
     None = 0,
     Root = 1 << 1,
@@ -38,4 +44,9 @@ enum NinaScopeType {
     While = 1 << 6,
     Try = 1 << 7,
     Catch = 1 << 8
+}
+
+enum NinaWithStatementTypes {
+    None,
+    Strict, Chinese
 }
