@@ -1,7 +1,7 @@
 namespace Nina;
 
 abstract class ANinaAST {
-    public List<string> annos = new List<string>();
+    public HashSet<string> annos = new HashSet<string>();
     public NinaErrorPosition pos;
     public ANinaAST(NinaErrorPosition _pos) {
         pos = _pos;
@@ -188,16 +188,5 @@ class NinaASTTryStatement : ANinaASTStatement {
             : base(_pos) {
         block = _block;
         block_catch = _block_catch;
-    }
-}
-class NinaASTWithStatement : ANinaASTStatement {
-    public bool isWithout;
-    public HashSet<NinaWithStatementTypes> withTypes;
-    public NinaASTWithStatement(
-            HashSet<NinaWithStatementTypes> _withTypes,
-            NinaErrorPosition _pos, bool _isWithout = false)
-            : base(_pos) {
-        withTypes = _withTypes;
-        isWithout = _isWithout;
     }
 }

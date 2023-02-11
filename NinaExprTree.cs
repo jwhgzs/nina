@@ -103,7 +103,8 @@ class NinaExprTree {
             boss.replace(this, _tree);
         _tree.append(this);
     }
-    public ANinaASTExpression compile(bool _isRoot = true) {
+    public ANinaASTExpression compile(
+            HashSet<NinaWithStatementTypes> _withs, bool _isRoot = true) {
         NinaErrorPosition pos
             = new NinaErrorPosition(
                 block.file, block.line, block.col
@@ -148,8 +149,8 @@ class NinaExprTree {
                 NinaError.error("莫名其妙的错误.", 584489);
             }
             else if (block.val_op_unary == false) {
-                ANinaASTExpression node_l = l!.compile(false);
-                ANinaASTExpression node_r = r!.compile(false);
+                ANinaASTExpression node_l = l!.compile(_withs: _withs, _isRoot: false);
+                ANinaASTExpression node_r = r!.compile(_withs: _withs, _isRoot: false);
                 ANinaASTExpression? expr_l = node_l as ANinaASTCommonExpression;
                 ANinaASTExpression? expr_r = node_r as ANinaASTCommonExpression;
                 NinaASTListExpression? list_l = node_l as NinaASTListExpression;
@@ -316,17 +317,20 @@ class NinaExprTree {
                         );
                 }
                 else {
-                    return
-                        new NinaASTBinaryExpression(
+                    NinaASTBinaryExpression ret
+                        = new NinaASTBinaryExpression(
                             _type: (NinaOperatorType) block.val_op !,
                             _expr_l: expr_l,
                             _expr_r: expr_r,
                             pos
                         );
+                    if (_withs.Contains(NinaWithStatementTypes.Strict))
+                        ret.annos.Add(NinaConstsProviderUtil.NINA_ANNO_STRICT);
+                    return ret;
                 }
             }
             else {
-                ANinaASTExpression node = r!.compile(false);
+                ANinaASTExpression node = r!.compile(_withs: _withs, _isRoot: false);
                 ANinaASTExpression? expr = node as ANinaASTCommonExpression;
                 NinaASTListExpression? list = node as NinaASTListExpression;
                 NinaASTBlockExpression? compiledBlock = node as NinaASTBlockExpression;
@@ -385,12 +389,15 @@ class NinaExprTree {
                     return node;
                 }
                 else {
-                    return
-                        new NinaASTUnaryExpression(
+                    NinaASTUnaryExpression ret
+                        = new NinaASTUnaryExpression(
                             _type: (NinaOperatorType) block.val_op !,
                             _expr: expr,
-                            _pos: expr.pos
+                            pos
                         );
+                    if (_withs.Contains(NinaWithStatementTypes.Strict))
+                        ret.annos.Add(NinaConstsProviderUtil.NINA_ANNO_STRICT);
+                    return ret;
                 }
             }
         }

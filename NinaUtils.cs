@@ -6,8 +6,10 @@ static class NinaConstsProviderUtil {
     public const string NINA_ID_PREFIX = "NinaGlobal__";
     public const string NINA_APIUTIL_OPERATOR_PREFIX = "op";
     public const string NINA_APIUTIL_CONVERTION_PREFIX = "to";
+    public const string NINA_APIUTIL_STRICT_SUFFIX = "S";
     public const string NINA_ANNO_SPECIALARG = "NINA_ANNO_SPECIALARG";
     public const string NINA_ANNO_SPECIALRETURN = "NINA_ANNO_SPECIALRETURN";
+    public const string NINA_ANNO_STRICT = "NINA_ANNO_STRICT";
     public const string IL_ASSEMBLY_ID = "NinaRuntime";
     public const string IL_MODULE_ID = "NinaRuntimeModule";
     public const string IL_ENTRYCLASS_ID = "NinaEntry";
@@ -38,8 +40,7 @@ static class NinaCodeBlockUtil {
         ["continue"] = NinaKeywordType.Continue,
         ["try"] = NinaKeywordType.Try,
         ["catch"] = NinaKeywordType.Catch,
-        ["with"] = NinaKeywordType.With,
-        ["without"] = NinaKeywordType.Without
+        ["with"] = NinaKeywordType.With
     };
     public static List<string> specialIdentifiers
             = new List<string> {

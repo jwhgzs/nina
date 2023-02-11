@@ -20,7 +20,7 @@ enum NinaKeywordType {
     Var, Const, Func,
     If, Else, Elseif, While, Return, Break, Continue,
     Try, Catch,
-    With, Without
+    With
 }
 
 enum NinaOperatorType {

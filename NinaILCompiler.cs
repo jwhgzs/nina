@@ -34,7 +34,6 @@ static class NinaILCompiler {
         return null;
     }
     public static void compile_identifier(
-            HashSet<NinaWithStatementTypes> _withs,
             NinaASTIdentifierExpression _id, ILGenerator _g,
             Dictionary<string, FieldInfo> _globs,
             Dictionary<string, FieldInfo> _glob_consts,
@@ -141,7 +140,6 @@ static class NinaILCompiler {
         postable(_pos_table, _ss, _g, _id);
     }
     public static void compile_expr(
-            HashSet<NinaWithStatementTypes> _withs,
             ModuleBuilder _mb, TypeBuilder _cl, ILGenerator _g,
             ANinaASTExpression _expr,
             Dictionary<string, FieldInfo> _globs,
@@ -168,7 +166,6 @@ static class NinaILCompiler {
         }
         else if (_expr is NinaASTIdentifierExpression id) {
             compile_identifier(
-                _withs: _withs,
                 _id: id,
                 _g: _g,
                 _globs: _globs,
@@ -185,7 +182,6 @@ static class NinaILCompiler {
             if (binary.type == NinaOperatorType.LOr
                     || binary.type == NinaOperatorType.LAnd) {
                 compile_expr(
-                    _withs: _withs,
                     _mb: _mb,
                     _cl: _cl,
                     _g: _g,
@@ -210,7 +206,6 @@ static class NinaILCompiler {
                 );
                 _g.Emit(OpCodes.Pop);
                 compile_expr(
-                    _withs: _withs,
                     _mb: _mb,
                     _cl: _cl,
                     _g: _g,
@@ -351,7 +346,6 @@ static class NinaILCompiler {
                     g.Emit(OpCodes.Ldloc_0);
                     if (init != null) {
                         compile_expr(
-                            _withs: _withs,
                             _mb: _mb,
                             _cl: _cl,
                             _g: g,
@@ -376,7 +370,6 @@ static class NinaILCompiler {
                     g.MarkLabel(label);
                 }
                 compile_block(
-                    _withs: _withs,
                     _mb: _mb,
                     _cl: _cl,
                     _g: g,
@@ -426,7 +419,6 @@ static class NinaILCompiler {
                 if (l is NinaASTBinaryExpression tmp
                         && tmp.type == NinaOperatorType.MBraL) {
                     compile_expr(
-                        _withs: _withs,
                         _mb: _mb,
                         _cl: _cl,
                         _g: _g,
@@ -441,7 +433,6 @@ static class NinaILCompiler {
                         _ss: _ss
                     );
                     compile_expr(
-                        _withs: _withs,
                         _mb: _mb,
                         _cl: _cl,
                         _g: _g,
@@ -456,7 +447,6 @@ static class NinaILCompiler {
                         _ss: _ss
                     );
                     compile_expr(
-                        _withs: _withs,
                         _mb: _mb,
                         _cl: _cl,
                         _g: _g,
@@ -477,7 +467,6 @@ static class NinaILCompiler {
                 }
                 else if (l is NinaASTIdentifierExpression nid) {
                     compile_expr(
-                        _withs: _withs,
                         _mb: _mb,
                         _cl: _cl,
                         _g: _g,
@@ -493,7 +482,6 @@ static class NinaILCompiler {
                     );
                     _g.Emit(OpCodes.Dup);
                     compile_identifier(
-                        _withs: _withs,
                         _id: nid,
                         _g: _g,
                         _globs: _globs,
@@ -513,7 +501,6 @@ static class NinaILCompiler {
             }
             else if (binary.type == NinaOperatorType.MBraL) {
                 compile_expr(
-                    _withs: _withs,
                     _mb: _mb,
                     _cl: _cl,
                     _g: _g,
@@ -528,7 +515,6 @@ static class NinaILCompiler {
                     _ss: _ss
                 );
                 compile_expr(
-                    _withs: _withs,
                     _mb: _mb,
                     _cl: _cl,
                     _g: _g,
@@ -570,7 +556,6 @@ static class NinaILCompiler {
                             && binary.expr_l is NinaASTBinaryExpression tmp2
                             && tmp2.type == NinaOperatorType.MBraL) {
                         compile_expr(
-                            _withs: _withs,
                             _mb: _mb,
                             _cl: _cl,
                             _g: _g,
@@ -587,7 +572,6 @@ static class NinaILCompiler {
                         _g.Emit(OpCodes.Stloc, tmp);
                         _g.Emit(OpCodes.Ldloc, tmp);
                         compile_expr(
-                            _withs: _withs,
                             _mb: _mb,
                             _cl: _cl,
                             _g: _g,
@@ -608,7 +592,6 @@ static class NinaILCompiler {
                     }
                     else {
                         compile_expr(
-                            _withs: _withs,
                             _mb: _mb,
                             _cl: _cl,
                             _g: _g,
@@ -624,7 +607,6 @@ static class NinaILCompiler {
                         );
                         if (nid != null && nid.name == "self") {
                             compile_expr(
-                                _withs: _withs,
                                 _mb: _mb,
                                 _cl: _cl,
                                 _g: _g,
@@ -667,7 +649,6 @@ static class NinaILCompiler {
                     if (args.Count > 0 && args[0].annos.Contains(
                             NinaConstsProviderUtil.NINA_ANNO_SPECIALARG)) {
                         compile_expr(
-                            _withs: _withs,
                             _mb: _mb,
                             _cl: _cl,
                             _g: _g,
@@ -691,7 +672,6 @@ static class NinaILCompiler {
                         ANinaASTExpression v = args[i];
                         _g.Emit(OpCodes.Dup);
                         compile_expr(
-                            _withs: _withs,
                             _mb: _mb,
                             _cl: _cl,
                             _g: _g,
@@ -725,7 +705,6 @@ static class NinaILCompiler {
                     for (int i = 0; i < args.Count; ++ i) {
                         ANinaASTExpression v = args[i];
                         compile_expr(
-                            _withs: _withs,
                             _mb: _mb,
                             _cl: _cl,
                             _g: _g,
@@ -745,7 +724,6 @@ static class NinaILCompiler {
             }
             else {
                 compile_expr(
-                    _withs: _withs,
                     _mb: _mb,
                     _cl: _cl,
                     _g: _g,
@@ -760,7 +738,6 @@ static class NinaILCompiler {
                     _ss: _ss
                 );
                 compile_expr(
-                    _withs: _withs,
                     _mb: _mb,
                     _cl: _cl,
                     _g: _g,
@@ -779,13 +756,18 @@ static class NinaILCompiler {
                     typeof(NinaAPIUtil).GetMethod(
                         NinaConstsProviderUtil.NINA_APIUTIL_OPERATOR_PREFIX
                             + binary.type.ToString()
+                            + (
+                                binary.annos.Contains(
+                                    NinaConstsProviderUtil.NINA_ANNO_STRICT)
+                                ? NinaConstsProviderUtil.NINA_APIUTIL_STRICT_SUFFIX
+                                : ""
+                            )
                     ) !
                 );
             }
         }
         else if (_expr is NinaASTUnaryExpression unary) {
             compile_expr(
-                _withs: _withs,
                 _mb: _mb,
                 _cl: _cl,
                 _g: _g,
@@ -804,6 +786,12 @@ static class NinaILCompiler {
                 typeof(NinaAPIUtil).GetMethod(
                     NinaConstsProviderUtil.NINA_APIUTIL_OPERATOR_PREFIX
                         + unary.type.ToString()
+                        + (
+                            unary.annos.Contains(
+                                NinaConstsProviderUtil.NINA_ANNO_STRICT)
+                            ? NinaConstsProviderUtil.NINA_APIUTIL_STRICT_SUFFIX
+                            : ""
+                        )
                 ) !
             );
         }
@@ -827,7 +815,6 @@ static class NinaILCompiler {
                             continue;
                         _g.Emit(OpCodes.Dup);
                         compile_expr(
-                            _withs: _withs,
                             _mb: _mb,
                             _cl: _cl,
                             _g: _g,
@@ -845,7 +832,6 @@ static class NinaILCompiler {
                             _ss: _ss
                         );
                         compile_expr(
-                            _withs: _withs,
                             _mb: _mb,
                             _cl: _cl,
                             _g: _g,
@@ -878,7 +864,6 @@ static class NinaILCompiler {
                         = list.list[i] as ANinaASTExpression;
                     _g.Emit(OpCodes.Dup);
                     compile_expr(
-                        _withs: _withs,
                         _mb: _mb,
                         _cl: _cl,
                         _g: _g,
@@ -896,7 +881,6 @@ static class NinaILCompiler {
                         _ss: _ss
                     );
                     compile_expr(
-                        _withs: _withs,
                         _mb: _mb,
                         _cl: _cl,
                         _g: _g,
@@ -930,7 +914,6 @@ static class NinaILCompiler {
         postable(_pos_table, _ss, _g, _expr);
     }
     public static void compile_block(
-            HashSet<NinaWithStatementTypes> _withs,
             ModuleBuilder _mb, TypeBuilder _cl, ILGenerator _g,
             NinaASTBlockExpression _block,
             Dictionary<string, FieldInfo> _globs,
@@ -945,7 +928,6 @@ static class NinaILCompiler {
         for (int i = 0; i < stms.Count; ++ i) {
             ANinaASTStatement v = stms[i];
             compile_stm(
-                _withs: _withs,
                 _mb: _mb,
                 _cl: _cl,
                 _g: _g,
@@ -967,7 +949,6 @@ static class NinaILCompiler {
         }
     }
     public static void compile_stm(
-            HashSet<NinaWithStatementTypes> _withs,
             ModuleBuilder _mb, TypeBuilder _cl, ILGenerator _g,
             ANinaASTStatement _stm,
             Dictionary<string, FieldInfo> _globs,
@@ -980,7 +961,6 @@ static class NinaILCompiler {
             Label? _label_break = null, Label? _label_continue = null) {
         if (_stm is NinaASTExpressionStatement expr) {
             compile_expr(
-                _withs: _withs,
                 _mb: _mb,
                 _cl: _cl,
                 _g: _g,
@@ -1004,7 +984,6 @@ static class NinaILCompiler {
                 var doit = () => {
                     if (init != null) {
                         compile_expr(
-                            _withs: _withs,
                             _mb: _mb,
                             _cl: _cl,
                             _g: _g,
@@ -1048,7 +1027,6 @@ static class NinaILCompiler {
         }
         else if (_stm is NinaASTIfStatement ifs) {
             compile_expr(
-                _withs: _withs,
                 _mb: _mb,
                 _cl: _cl,
                 _g: _g,
@@ -1072,7 +1050,6 @@ static class NinaILCompiler {
             Label label_else = _g.DefineLabel();
             _g.Emit(OpCodes.Brfalse, label_else);
             compile_block(
-                _withs: _withs,
                 _mb: _mb,
                 _cl: _cl,
                 _g: _g,
@@ -1095,7 +1072,6 @@ static class NinaILCompiler {
             _g.MarkLabel(label_else);
             if (ifs.block_else != null) {
                 compile_block(
-                    _withs: _withs,
                     _mb: _mb,
                     _cl: _cl,
                     _g: _g,
@@ -1121,7 +1097,6 @@ static class NinaILCompiler {
             Label label_end = _g.DefineLabel();
             _g.MarkLabel(label_while);
             compile_expr(
-                _withs: _withs,
                 _mb: _mb,
                 _cl: _cl,
                 _g: _g,
@@ -1144,7 +1119,6 @@ static class NinaILCompiler {
             );
             _g.Emit(OpCodes.Brfalse, label_end);
             compile_block(
-                _withs: _withs,
                 _mb: _mb,
                 _cl: _cl,
                 _g: _g,
@@ -1169,7 +1143,6 @@ static class NinaILCompiler {
             if (words.type == NinaKeywordType.Return) {
                 if (words.expr != null) {
                     compile_expr(
-                        _withs: _withs,
                         _mb: _mb,
                         _cl: _cl,
                         _g: _g,
@@ -1209,7 +1182,6 @@ static class NinaILCompiler {
         else if (_stm is NinaASTTryStatement trys) {
             _g.BeginExceptionBlock();
             compile_block(
-                _withs: _withs,
                 _mb: _mb,
                 _cl: _cl,
                 _g: _g,
@@ -1239,7 +1211,6 @@ static class NinaILCompiler {
                 _g.Emit(OpCodes.Call, typeof(NinaAPIUtil).GetMethod("convert_ex") !);
                 _g.Emit(OpCodes.Stsfld, exReg);
                 compile_block(
-                    _withs: _withs,
                     _mb: _mb,
                     _cl: _cl,
                     _g: _g,
@@ -1264,13 +1235,6 @@ static class NinaILCompiler {
             _g.Emit(OpCodes.Stsfld, _glob_consts["exception"]);
             _g.EndExceptionBlock();
         }
-        else if (_stm is NinaASTWithStatement withs) {
-            bool isWithout = withs.isWithout;
-            for (int i = 0; i < withs.withTypes.Count; ++ i) {
-                NinaWithStatementTypes v = withs.withTypes.ElementAt(i);
-
-            }
-        }
         else {
             NinaError.error("莫名其妙的错误.", 121055);
         }
@@ -1278,7 +1242,8 @@ static class NinaILCompiler {
         postable(_pos_table, _ss, _g, _stm);
     }
     public static void init_apis(
-            string _file, TypeBuilder _tb, MethodBuilder _mb, ILGenerator _g,
+            string _file,
+            TypeBuilder _tb, MethodBuilder _mb, ILGenerator _g,
             Dictionary<string, FieldInfo> _globs,
             Dictionary<string, FieldInfo> _glob_consts,
             Dictionary<string, List<(int, NinaErrorPosition)>> _pos_table) {
@@ -1378,7 +1343,6 @@ static class NinaILCompiler {
         Label returnLabel = _g.DefineLabel();
         _g.BeginExceptionBlock();
         compile_block(
-            _withs: new HashSet<NinaWithStatementTypes>(),
             _mb: _mb,
             _cl: _cl,
             _g: _g,

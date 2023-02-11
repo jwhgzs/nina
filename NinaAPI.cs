@@ -54,6 +54,19 @@ public static class NinaAPIUtil {
             NinaError.error("无法进行到 Number 的类型转换.", 412910);
         return 0;
     }
+    public static double toNumberS(object _o) {
+        if (_o is double d)
+            return d;
+        else if (_o is bool b)
+            return b ? 1 : 0;
+        else if (_o is int i)
+            return i;
+        else if (_o is long l)
+            return l;
+        else
+            NinaError.error("无法进行到 Number 的类型转换.", 546892);
+        return 0;
+    }
     public static string toTypeDesc(object _o) {
         if (_o == null)
             return "[Null]";
@@ -91,34 +104,65 @@ public static class NinaAPIUtil {
         else
             return toTypeDesc(_o);
     }
+
     public static object opAdd(object _lhs, object _rhs) {
         if (_lhs is string a || _rhs is string b)
             return toString(_lhs) + toString(_rhs);
         else
             return toNumber(_lhs) + toNumber(_rhs);
     }
+    public static object opAddS(object _lhs, object _rhs) {
+        if (_lhs is string a && _rhs is string b)
+            return a + b;
+        else
+            return toNumberS(_lhs) + toNumberS(_rhs);
+    }
     public static object opSub(object _lhs, object _rhs) {
         return toNumber(_lhs) - toNumber(_rhs);
+    }
+    public static object opSubS(object _lhs, object _rhs) {
+        return toNumberS(_lhs) - toNumberS(_rhs);
     }
     public static object opPos(object _o) {
         return toNumber(_o);
     }
+    public static object opPosS(object _o) {
+        return toNumberS(_o);
+    }
     public static object opNeg(object _o) {
         return - toNumber(_o);
+    }
+    public static object opNegS(object _o) {
+        return - toNumberS(_o);
     }
     public static object opMut(object _lhs, object _rhs) {
         return toNumber(_lhs) * toNumber(_rhs);
     }
+    public static object opMutS(object _lhs, object _rhs) {
+        return toNumberS(_lhs) * toNumberS(_rhs);
+    }
     public static object opDiv(object _lhs, object _rhs) {
         return toNumber(_lhs) / toNumber(_rhs);
+    }
+    public static object opDivS(object _lhs, object _rhs) {
+        return toNumberS(_lhs) / toNumberS(_rhs);
     }
     public static object opRem(object _lhs, object _rhs) {
         return toNumber(_lhs) % toNumber(_rhs);
     }
+    public static object opRemS(object _lhs, object _rhs) {
+        return toNumberS(_lhs) % toNumberS(_rhs);
+    }
     public static object opPow(object _lhs, object _rhs) {
         return Math.Pow(toNumber(_lhs), toNumber(_rhs));
     }
+    public static object opPowS(object _lhs, object _rhs) {
+        return Math.Pow(toNumberS(_lhs), toNumberS(_rhs));
+    }
     public static object opLNot(object _o) {
+        return ! toBool(_o);
+    }
+    public static object opLNotS(object _o) {
         return ! toBool(_o);
     }
     public static bool opLEqu_bool(object _lhs, object _rhs) {
@@ -130,23 +174,50 @@ public static class NinaAPIUtil {
             return toString(_lhs) == toString(_rhs);
         return false;
     }
+    public static bool opLEquS_bool(object _lhs, object _rhs) {
+        if (_lhs == _rhs)
+            return true;
+        if (_lhs is double d1 && _rhs is double d2)
+            return d1 == d2;
+        if (_lhs is string s1 && _rhs is string s2)
+            return s1 == s2;
+        return false;
+    }
     public static object opLEqu(object _lhs, object _rhs) {
         return opLEqu_bool(_lhs, _rhs);
+    }
+    public static object opLEquS(object _lhs, object _rhs) {
+        return opLEquS_bool(_lhs, _rhs);
     }
     public static object opLNEqu(object _lhs, object _rhs) {
         return ! opLEqu_bool(_lhs, _rhs);
     }
+    public static object opLNEquS(object _lhs, object _rhs) {
+        return ! opLEquS_bool(_lhs, _rhs);
+    }
     public static object opMore(object _lhs, object _rhs) {
         return toNumber(_lhs) > toNumber(_rhs);
+    }
+    public static object opMoreS(object _lhs, object _rhs) {
+        return toNumberS(_lhs) > toNumberS(_rhs);
     }
     public static object opLess(object _lhs, object _rhs) {
         return toNumber(_lhs) < toNumber(_rhs);
     }
+    public static object opLessS(object _lhs, object _rhs) {
+        return toNumberS(_lhs) < toNumberS(_rhs);
+    }
     public static object opMoreE(object _lhs, object _rhs) {
         return toNumber(_lhs) >= toNumber(_rhs);
     }
+    public static object opMoreES(object _lhs, object _rhs) {
+        return toNumberS(_lhs) >= toNumberS(_rhs);
+    }
     public static object opLessE(object _lhs, object _rhs) {
         return toNumber(_lhs) <= toNumber(_rhs);
+    }
+    public static object opLessES(object _lhs, object _rhs) {
+        return toNumberS(_lhs) <= toNumberS(_rhs);
     }
     public static object opLAnd(object _lhs, object _rhs) {
         return ! toBool(_lhs) ? _lhs : _rhs;
@@ -157,20 +228,38 @@ public static class NinaAPIUtil {
     public static object opNot(object _o) {
         return (double) (~ (int) toNumber(_o));
     }
+    public static object opNotS(object _o) {
+        return (double) (~ (int) toNumberS(_o));
+    }
     public static object opAnd(object _lhs, object _rhs) {
         return (double) ((int) toNumber(_lhs) & (int) toNumber(_rhs));
+    }
+    public static object opAndS(object _lhs, object _rhs) {
+        return (double) ((int) toNumberS(_lhs) & (int) toNumberS(_rhs));
     }
     public static object opOr(object _lhs, object _rhs) {
         return (double) ((int) toNumber(_lhs) | (int) toNumber(_rhs));
     }
+    public static object opOrS(object _lhs, object _rhs) {
+        return (double) ((int) toNumberS(_lhs) | (int) toNumberS(_rhs));
+    }
     public static object opXOr(object _lhs, object _rhs) {
         return (double) ((int) toNumber(_lhs) ^ (int) toNumber(_rhs));
+    }
+    public static object opXOrS(object _lhs, object _rhs) {
+        return (double) ((int) toNumberS(_lhs) ^ (int) toNumberS(_rhs));
     }
     public static object opSftL(object _lhs, object _rhs) {
         return (double) ((int) toNumber(_lhs) << (int) toNumber(_rhs));
     }
+    public static object opSftLS(object _lhs, object _rhs) {
+        return (double) ((int) toNumberS(_lhs) << (int) toNumberS(_rhs));
+    }
     public static object opSftR(object _lhs, object _rhs) {
         return (double) ((int) toNumber(_lhs) >> (int) toNumber(_rhs));
+    }
+    public static object opSftRS(object _lhs, object _rhs) {
+        return (double) ((int) toNumberS(_lhs) >> (int) toNumberS(_rhs));
     }
     public static object opTypeof(object _o) {
         return toTypeDesc(_o);
@@ -192,6 +281,7 @@ public static class NinaAPIUtil {
         }
         return null !;
     }
+
     public static object member_init(
             object _obj, object _key, object _val, int _isConst,
             int _allowSetConst) {
@@ -223,6 +313,7 @@ public static class NinaAPIUtil {
             object _obj, object _key, object _val) {
         return member_init(_obj, _key, _val, 0, 0);
     }
+
     public static void error(string _msg, int _uniqueCode) {
         NinaError.error(_msg, _uniqueCode);
     }
@@ -323,6 +414,13 @@ public static class NinaAPI {
     public static object @false = false;
     public static object math_PI = Math.PI;
     public static object math_E = Math.E;
+
+    public static object number(object _data) {
+        return NinaAPIUtil.toNumber(_data);
+    }
+    public static object @string(object _data) {
+        return NinaAPIUtil.toString(_data);
+    }
     public static object eval(object _code, object _arg) {
         string code = NinaAPIUtil.toString(_code);
         try {
@@ -344,6 +442,7 @@ public static class NinaAPI {
         NinaError.error("用户自定义的异常：\n" + _msg, - 1);
         return null !;
     }
+
     public static object console_print(object _data) {
         string v = NinaAPIUtil.toString(_data);
         Console.Write(v);
@@ -361,6 +460,7 @@ public static class NinaAPI {
         Environment.Exit(- 2);
         return null !;
     }
+
     public static object string_at(object _str, object _i) {
         string str = NinaAPIUtil.toString(_str);
         int i = (int) NinaAPIUtil.toNumber(_i);
@@ -479,6 +579,7 @@ public static class NinaAPI {
         string str = NinaAPIUtil.toString(_str);
         return (double) str.Length;
     }
+
     public static object array_length(object _arr) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
@@ -569,13 +670,13 @@ public static class NinaAPI {
     }
     private static JsonSerializerOptions json_option
             = new JsonSerializerOptions() {
-                ReferenceHandler = ReferenceHandler.IgnoreCycles,
-                WriteIndented = true,
-                Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
-                Converters = {
-                    new NinaJSONObjectConverter()
-                }
-            };
+        ReferenceHandler = ReferenceHandler.IgnoreCycles,
+        WriteIndented = true,
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
+        Converters = {
+            new NinaJSONObjectConverter()
+        }
+    };
     public static object array_to_json(object _arr) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
@@ -606,6 +707,7 @@ public static class NinaAPI {
             return null !;
         }
     }
+
     public static object object_length(object _obj) {
         NinaDataObject? obj = _obj as NinaDataObject;
         if (obj == null) {
@@ -655,7 +757,7 @@ public static class NinaAPI {
         if (obj == null) {
             NinaError.error("操作的对象无效.", 790422);
         }
-        return obj!.Remove(key);
+        return obj!.Remove(key) && obj!.my_consts.Remove(key);
     }
     public static object object_clear(object _obj) {
         NinaDataObject? obj = _obj as NinaDataObject;
@@ -695,6 +797,7 @@ public static class NinaAPI {
             return null !;
         }
     }
+
     public static object time_now() {
         TimeSpan ts
             = DateTime.Now.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0);
@@ -738,6 +841,7 @@ public static class NinaAPI {
             return null !;
         }
     }
+
     private static Random random_gener = new Random();
     public static object random_raw() {
         return random_gener.NextDouble();
@@ -748,6 +852,7 @@ public static class NinaAPI {
         double d = random_gener.NextDouble();
         return min + d * (max - min);
     }
+
     public static object math_floor(object _n) {
         double n = NinaAPIUtil.toNumber(_n);
         return Math.Floor(n);

@@ -5,7 +5,8 @@ namespace Nina;
 static class NinaCompiler {
     public static NinaExprTree resolve_expr(
             List<NinaCodeBlock> _blocks,
-            ref int _i, NinaOperatorType? _ender_op1 = null,
+            ref int _i, HashSet<NinaWithStatementTypes> _withs,
+            NinaOperatorType? _ender_op1 = null,
             NinaOperatorType? _ender_op2 = null) {
         if (_blocks.Count == 0)
             return new NinaExprTree(false);
@@ -107,6 +108,7 @@ static class NinaCompiler {
                     buf = resolve_expr(
                         _blocks: _blocks,
                         _i: ref _i,
+                        _withs: _withs,
                         _ender_op1: NinaOperatorType.BraR
                     );
                     continue;
@@ -117,6 +119,7 @@ static class NinaCompiler {
                             _file: file,
                             _blocks: _blocks,
                             _i: ref _i,
+                            _withs: _withs,
                             _scope: NinaScopeType.Function,
                             _cscope: NinaScopeType.Function
                         )
@@ -184,6 +187,7 @@ static class NinaCompiler {
                             buf = resolve_expr(
                                 _blocks: _blocks,
                                 _i: ref _i,
+                                _withs: _withs,
                                 _ender_op1:
                                     v!.Value.val_op == NinaOperatorType.BraL
                                     ? NinaOperatorType.BraR
@@ -223,9 +227,9 @@ static class NinaCompiler {
         return tree ?? new NinaExprTree(false);
     }
     public static NinaASTBlockExpression compile(
-            string _file,
-            List<NinaCodeBlock> _blocks,
-            ref int _i, NinaScopeType _scope = NinaScopeType.Root,
+            string _file, List<NinaCodeBlock> _blocks,
+            ref int _i, HashSet<NinaWithStatementTypes> _withs,
+            NinaScopeType _scope = NinaScopeType.Root,
             NinaScopeType _cscope = NinaScopeType.Root) {
         NinaASTBlockExpression block = new NinaASTBlockExpression(
             new NinaErrorPosition(
@@ -286,7 +290,8 @@ static class NinaCompiler {
                         do {
                             NinaExprTree expr = resolve_expr(
                                 _blocks: _blocks,
-                                _i: ref _i
+                                _i: ref _i,
+                                _withs: _withs
                             );
                             if (expr.type == NinaExprTreeType.Void || (
                                     expr.type != NinaExprTreeType.Data
@@ -301,7 +306,7 @@ static class NinaCompiler {
                             }
                             else if (expr.type != NinaExprTreeType.Data) {
                                 ANinaASTExpression? val
-                                    = expr.r!.compile() as ANinaASTExpression;
+                                    = expr.r!.compile(_withs) as ANinaASTExpression;
                                 if (val == null) {
                                     NinaError.error(
                                         "无效的变量初始化表达式.",
@@ -365,12 +370,13 @@ static class NinaCompiler {
                             ? resolve_expr(
                                 _blocks: _blocks,
                                 _i: ref _i,
+                                _withs: _withs,
                                 _ender_op1: NinaOperatorType.BraR
                             )
                             : null;
                     ANinaASTExpression? expr
                         = v.val_kw != NinaKeywordType.Else
-                            ? tree!.compile() as ANinaASTExpression
+                            ? tree!.compile(_withs) as ANinaASTExpression
                             : null;
                     NinaCodeBlock? cBraL
                         = _i + 1 > _blocks.Count - 1
@@ -409,6 +415,7 @@ static class NinaCompiler {
                             _file: v.file,
                             _blocks: _blocks,
                             _i: ref _i,
+                            _withs: _withs,
                             _scope: _scope | nscope,
                             _cscope: nscope
                         );
@@ -492,8 +499,9 @@ static class NinaCompiler {
                 else if (v.val_kw == NinaKeywordType.Return) {
                     ANinaASTExpression expr_raw = resolve_expr(
                         _blocks: _blocks,
-                        _i: ref _i
-                    ).compile();
+                        _i: ref _i,
+                        _withs: _withs
+                    ).compile(_withs);
                     ANinaASTCommonExpression expr
                         = expr_raw as ANinaASTCommonExpression
                             ?? new NinaASTLiteralExpression(
@@ -571,6 +579,7 @@ static class NinaCompiler {
                             NinaExprTree expr = resolve_expr(
                                 _blocks: _blocks,
                                 _i: ref _i,
+                                _withs: _withs,
                                 _ender_op1: NinaOperatorType.Com,
                                 _ender_op2: NinaOperatorType.BraR
                             );
@@ -587,7 +596,7 @@ static class NinaCompiler {
                             }
                             else if (expr.type != NinaExprTreeType.Data) {
                                 ANinaASTExpression? val
-                                    = expr.r!.compile() as ANinaASTExpression;
+                                    = expr.r!.compile(_withs) as ANinaASTExpression;
                                 if (val == null) {
                                     NinaError.error(
                                         "无效的形参初始化表达式.",
@@ -653,6 +662,7 @@ static class NinaCompiler {
                         _file: v.file,
                         _blocks: _blocks,
                         _i: ref _i,
+                        _withs: _withs,
                         _scope: NinaScopeType.Function,
                         _cscope: NinaScopeType.Function
                     );
@@ -699,6 +709,7 @@ static class NinaCompiler {
                             _file: v.file,
                             _blocks: _blocks,
                             _i: ref _i,
+                            _withs: _withs,
                             _scope: _scope | NinaScopeType.Try,
                             _cscope: NinaScopeType.Try
                         );
@@ -724,16 +735,23 @@ static class NinaCompiler {
                         }
                     }
                 }
-                else if (v.val_kw == NinaKeywordType.With
-                        || v.val_kw == NinaKeywordType.Without) {
-                    HashSet<NinaWithStatementTypes> withs
-                        = new HashSet<NinaWithStatementTypes>();
+                else if (v.val_kw == NinaKeywordType.With) {
+                    if (_i > 0) {
+                        NinaError.error(
+                            "模块控制语句只能放在文件头.",
+                            693031,
+                            new NinaErrorPosition(
+                                v.file, v.line, v.col
+                            )
+                        );
+                    }
                     if (_i + 1 <= _blocks.Count - 1
                             && _blocks[_i + 1].val_sy != NinaSymbolType.Sem) {
                         do {
                             NinaExprTree expr = resolve_expr(
                                 _blocks: _blocks,
-                                _i: ref _i
+                                _i: ref _i,
+                                _withs: _withs
                             );
                             if (expr.type != NinaExprTreeType.Data
                                     || expr.block.type != NinaCodeBlockType.String) {
@@ -756,7 +774,7 @@ static class NinaCompiler {
                                 );
                             }
                             else {
-                                withs.Add(
+                                _withs.Add(
                                     NinaCodeBlockUtil.withStatementTypes
                                         [expr.block.val_str !]
                                 );
@@ -772,13 +790,6 @@ static class NinaCompiler {
                             new NinaErrorPosition(v.file, v.line, v.col)
                         );
                     }
-                    block.stms.Add(
-                        new NinaASTWithStatement(
-                            _withTypes: withs,
-                            _pos: new NinaErrorPosition(v.file, v.line, v.col),
-                            _isWithout: v.val_kw == NinaKeywordType.Without
-                        )
-                    );
                 }
                 else {
                     NinaError.error(
@@ -792,8 +803,9 @@ static class NinaCompiler {
                 -- _i;
                 ANinaASTExpression? expr = resolve_expr(
                     _blocks: _blocks,
-                    _i: ref _i
-                ).compile() as ANinaASTExpression;
+                    _i: ref _i,
+                    _withs: _withs
+                ).compile(_withs) as ANinaASTExpression;
                 if (expr == null) {}
                 else {
                     block.stms.Add(
@@ -814,7 +826,8 @@ static class NinaCompiler {
         return compile(
             _file: _file,
             _blocks: _blocks,
-            _i: ref i
+            _i: ref i,
+            _withs: new HashSet<NinaWithStatementTypes>()
         );
     }
 }
