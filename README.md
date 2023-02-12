@@ -152,6 +152,8 @@ var obj = object {
     // 通过变量、常量、函数定义语句来语义化地定义对象成员：
     var a = 1;
     const b = 2;
+    // 通过定义特殊变量或常量 type 来修改类型名
+    const type = "MyType";
     func c() {
         // this 指代当前函数执行的上下文，下文“函数”部分将详解
         return this.a + this.b;
@@ -170,6 +172,8 @@ console_printf(obj["c"]());
 obj.d = 2022;
 console_printf(obj.e);
 // 将输出 [Null] ，即空
+console_printf(typeof obj);
+// 将输出 [Object: MyType]
 
 // 通过 array 运算符创建数组。其右手值为列表表达式。
 var arr = array (2020, 2021, 2022, 2023);
@@ -355,6 +359,7 @@ Nina 默认不支持中文作标识符名，也没有中文关键字的支持。
     输出换行("你好，世界");
 }
 初始函数();
+// 不过，启用中文模式后原有的关键字、运算符、内置函数等仍能正常使用！
 ```
 
 ### 内置中文模式翻译表

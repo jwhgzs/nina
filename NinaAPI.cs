@@ -77,12 +77,16 @@ public static class NinaAPIUtil {
             return "[String]";
         else if (_o is NinaDataArray)
             return "[Array]";
-        else if (_o is NinaDataObject o)
-            return o.ContainsKey("type")
-                ? "[Object: "
-                    + NinaAPIUtil.toString(o["type"])
-                    + "]"
-                : "[Object]";
+        else if (_o is NinaDataObject o) {
+            bool b1 = o.TryGetValue("type", out object? s1);
+            bool b2 = o.TryGetValue("类型", out object? s2);
+            string? s1s = s1 as string;
+            string? s2s = s2 as string;
+            string s = s1s != null
+                ? ": " + s1s
+                : (s2s != null ? ": " + s2s : "");
+            return "[Object" + s + "]";
+        }
         else if (_o is Delegate)
             return "[Function]";
         else
