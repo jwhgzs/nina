@@ -671,7 +671,7 @@ public static class NinaAPI {
         }
         return (double) arr!.Count;
     }
-    public static object 数组_取项目数(object _arr) {
+    public static object 数组_取长度(object _arr) {
         return array_length(_arr);
     }
     public static object array_append(object _arr, object _item) {
@@ -829,7 +829,7 @@ public static class NinaAPI {
         }
         return (double) obj!.Count;
     }
-    public static object 对象_取项目数(object _obj) {
+    public static object 对象_取长度(object _obj) {
         return object_length(_obj);
     }
     public static object object_has(object _obj, object _key) {
@@ -892,6 +892,7 @@ public static class NinaAPI {
             NinaError.error("操作的对象无效.", 234012);
         }
         obj!.Clear();
+        obj!.my_consts.Clear();
         return true;
     }
     public static object 对象_清空(object _obj) {
@@ -939,7 +940,7 @@ public static class NinaAPI {
             = DateTime.Now.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0);
         return ts.TotalSeconds;
     }
-    public static object 时间_当前时间戳() {
+    public static object 时间_取当前时间戳() {
         return time_now();
     }
     public static object time_to_string(object _time) {

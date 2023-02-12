@@ -43,6 +43,11 @@ static class NinaILCompiler {
             Dictionary<string, List<(int, NinaErrorPosition)>> _pos_table,
             string _ss, bool _isSetting = false) {
         string idname = _id.name;
+        if (NinaCodeBlockUtil.specialIdentifiers_chineseTable
+                .ContainsKey(idname)) {
+            idname
+                = NinaCodeBlockUtil.specialIdentifiers_chineseTable[idname];
+        }
         if (! _isSetting) {
             if (_ins.Contains(idname)) {
                 _g.Emit(OpCodes.Ldloc_0);

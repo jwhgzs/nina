@@ -61,10 +61,19 @@ static class NinaCodeBlockUtil {
             ["with"] = NinaKeywordType.With
         }
     );
-    public static List<string> specialIdentifiers
-            = new List<string> {
-        "self", "this", "argument", "exception"
+    public static Dictionary<string, string> specialIdentifiers_chineseTable
+            = new Dictionary<string, string> {
+        ["自身函数"] = "self",
+        ["自身对象"] = "this",
+        ["参数"] = "argument",
+        ["异常"] = "exception"
     };
+    public static List<string> specialIdentifiers
+            = specialIdentifiers_chineseTable.Keys.Union(
+        new List<string> {
+            "self", "this", "argument", "exception"
+        }
+    ).ToList();
     public static Dictionary<string, NinaOperatorType> operators_chinese
             = new Dictionary<string, NinaOperatorType> {
         ["取类型"] = NinaOperatorType.Typeof,
@@ -129,7 +138,7 @@ static class NinaCodeBlockUtil {
         ['&'] = NinaOperatorType.And,
         ['|'] = NinaOperatorType.Or,
         ['^'] = NinaOperatorType.XOr,
-        ['~'] = NinaOperatorType.Neg,
+        ['~'] = NinaOperatorType.Not,
         ['!'] = NinaOperatorType.LNot,
         ['>'] = NinaOperatorType.More,
         ['<'] = NinaOperatorType.Less,

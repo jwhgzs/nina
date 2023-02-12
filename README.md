@@ -1,68 +1,464 @@
 # 关于作者
+
 这是我（作者本人）信息：
-- 姓名：谭镇洋
-- 学校：台山市新宁中学
-- 班别：2020秋11班（2023年届初三毕业生）
 
-你猜我为啥写这么个title？好吧我摊牌了，我就是想参个赛——《2023广东省学生信息素养提升实践活动》。
+- **姓名：**谭镇洋
+- **学校：**台山市新宁中学
+- **班别：**2020秋11班（2023年届初三毕业生）
+- **个人网站：**[jwhgzs.com](https://jwhgzs.com)
 
-先说一下我个人的编程经历。
+# 环境要求
 
-小学的就不用说了，虽然踏入了代码编程的门槛，但是见识太浅，只是在那几个中文编程IDE还有Java（for Android）里转来转去，除了赚了千把来块钱，一无所获。
+- Windows 10 及以上
+- 安装 [.NET 6.0 Framework](https://dotnet.microsoft.com/zh-cn/download/dotnet/6.0)
 
-初中三年（的前两年），我主要靠写网站出头（这是我小学时的梦想——拥有一个属于自己的域名和个人网站！），这里就不得不提到我的骄傲——[九尾狐工作室官网](https://jwhgzs.com)。现在她还在稳定运行！不光稳定，她已经投入实战——作为我们班的班级周报平台——这是令我最骄傲的一点，也许也是目前其他“竞争对手”难以做到的一点。不过现在她的功能没有之前的那么丰富了——初三上学期我做了很多重构工作，将她从Vue.js转移到支持SSR（服务端渲染）的Nuxt.js（当然也是Vue.js的技术栈啦），又由于我策略的转向，故只完成了事关紧要的班级周报平台的重写。
+# 使用方法
 
-接下来说到现在了——初三寒假的第一天，我头脑发热，突然想“转行”到偏底层的后端——毕竟写网站写了三年了，写腻了！！！于是赶忙把C++给学了。迫于我奇怪的学习方式，我只能了解完基本语法和特性以后，立刻开启一个大项目，跌跌撞撞再慢慢爬起来。于是，我参考[《两周自制编程语言》](https://www.zhihu.com/pub/book/119565082)，我用C++写出了一个废物脚本语言，有我自己做的AST（抽象语法树）、词法和语法分析、虚拟机等等——这就是Nina的前身。但是！我发现这家伙太慢了。久经性能优化无果，只能再次“转行”。
+Nina 目前只提供了命令行用法，普通用法大致如下：
 
-这一次，来到C#——也就是现在这个项目所用的语言。本来我了解到C#有一个神奇的API（[Roslyn](https://learn.microsoft.com/en-us/dotnet/api/microsoft.codeanalysis)），可以动态编译并运行C#代码，于是想省点力，把我的脚本语言编译成C#代码，再由神奇API动态执行。“但是”又来了。我发现这个API跑不通，网上教程也不完善，所以只能放弃，改成我发现的新宝藏——[`System.Reflection.Emit`](https://learn.microsoft.com/en-us/dotnet/api/system.reflection.emit)！这个API可以直接动态运行我们生成的MSIL（.NET框架的通用中间语言，一种高级汇编语言）！再次久经波折和大改，终于完成了现在的Nina——身材虽小，五脏俱全！现在我感觉她唯一的缺点就是效率有点……那个……低……
+- 1. 打开 Nina 项目目录
+- 2. 右键，点击“在终端中打开”
+- 3. 输入命令 `cmd` 并回车，进入 CMD
+- 4. 输入命令 `nina ./test.nina` 并回车，即可运行当前目录下的 Nina 源文件 `test.nina`。当然，可自己更改源文件路径。
 
-什么？你说我拿这个参赛太离谱了？还是说你不信这是我写的？
+当然，为了方便使用，还可以直接双击运行 Nina 项目目录下的快捷方式 `run.bat` ，也是一样的效果。
 
-好的，但是这是由Zhenyang Tan独自用C#开发的一个全新的脚本语言，基于MIT协议在[Github](https://github.com/jwhgzs/nina)开源，版权归我一个人所有，没有其他任何人（包括老师）的任何程度的参与。不服请自行参阅[MIT协议内容](https://github.com/jwhgzs/nina/blob/master/LICENSE)。
+# 初识 Nina
 
-# Nina的自我介绍
-Hello! 我就是实习时长一个月的实习生——Nina！
-这是我的简历：
-- 姓名： Nina Script
-- 性别： 0
-- 生日： 12月24日
-- 特长： 跑脚本业务
-- 性格： 温柔、细心、幽默
-- 缺点： 与同行相比，办事有点慢
+这是一个全新的脚本编程语言，简单、易学、语义化，拥有独创的模块化语法控制。
 
-# Nina的姐妹花
-Nina的语法、特性大部分参照了JavaScript——她们俩的语法移植可以说是无障碍的了！
+要搞明白上面的表述是什么意思，请先来看这么一段 Nina 代码：
 
-不过请先别急——来看看这段Nina代码：
 ```
-// 定义 fibo 函数
-func fibo(n) {
+应用 "中文", "强类型";
+
+输出("请输入表达式：");
+变量 表达式 = 输入();
+变量 代码 = "应用 '中文'; 返回 " + 表达式;
+变量 结果;
+尝试 {
+    结果 = 执行(代码, 空);
+    如果 (结果 == 空) {
+        抛出("");
+    }
+}
+捕捉 {
+    输出换行("计算失败！");
+    退出();
+}
+
+输出换行("计算结果：" + 到字符串(结果));
+```
+
+这就是用 Nina 写的一段实现简易计算器的代码。是不是很惊讶？没错，得益于模块化语法控制的加持， Nina 原生地支持中文编程，你还可以无缝地切换语法特性。
+
+这样看来， Nina 似乎很适合刚学习编程的菜鸟呢！没错——这就是 Nina 的最大卖点之一——简单、易学：
+
+- **简易的、无歧义的语法。**结合了各个语言的语法优点，取其精华去其糟粕，对菜鸟更加友好
+- **模块化语法控制。**因此可支持中文编程，降低学习门槛；切换语法特性，在同一个语言平台上，学习不同语言的特点
+
+下面将会介绍 Nina 中所有的语法特性~
+
+# Nina 的基本语法
+
+这里将通过几个实例来介绍 Nina 的基本语法：
+
+（另：为了方便，这里不采用中文编程的语法模块）
+
+### 变量与常量
+
+```
+// 通过 var 关键字定义变量。可以如下进行定义时初始化，当然也可以选择不初始化
+// 若变量或常量未初始化，则会被赋初始值 null （空）
+var a = 1, b = 2, c = 3;
+var d, e, f;
+// 变量的使用。
+a = a + 1;
+d = b * 2 + 1;
+
+// 通过 const 关键字定义常量。常量的定义也不要求一定要初始化，但是一般来说都需要初始化。
+const pi = 3.14;
+const my_const;
+// 若解开注释，下面这行会报错，因为常量定义后不能重新赋值
+// pi = 3, my_const = 2023;
+// 常量除了不能定义后修改，其他特性与变量一样！
+
+// 另外，允许重定义变量，即重名变量。例如下面这行不会报错。
+var a = 2023;
+```
+
+### 运算符
+
+```
+var a = 7, b = 4;
+var obj = object {
+    var y = 2022;
+    func f() {
+        return this.y + 1;
+    }
+};
+var f = obj.f;
+
+/* 双目运算符 */
+// 基本数学运算
+console_printf(a + b); // 加
+console_printf(a - b); // 减
+console_printf(a * b); // 乘
+console_printf(a / b); // 除
+console_printf(a % b); // 求余
+console_printf(a ** b); // 幂
+// 位运算
+console_printf(a & b); // 按位与
+console_printf(a | b); // 按位或
+console_printf(a ^ b); // 按位异或
+// 逻辑运算（短路）
+console_printf(a && b); // 逻辑与
+console_printf(a ? b); // 逻辑与（语法糖）
+console_printf(a || b); // 逻辑或
+console_printf(a : b); // 逻辑或（语法糖）
+console_printf(1 ? a : b); // 逻辑与 + 逻辑或，等价于其它语言的三目运算符
+// 逻辑运算（普通）
+console_printf(a > b); // 大于
+console_printf(a < b); // 小于
+console_printf(a >= b); // 大于等于
+console_printf(a <= b); // 小于等于
+console_printf(a == b); // 等于
+console_printf(a != b); // 不等于
+// 特殊运算
+console_printf(a = 24); // 赋值，运算结果（运算值）为被赋值变量的新值
+console_printf(obj["y"]); // 成员访问，后面“对象和数组”部分会详细讲解
+console_printf(obj.y); // 成员访问，后面“对象和数组”部分会详细讲解
+console_printf(obj.f()); // 函数调用
+var obj2 = object {}, arr = array (); // 对象、数组创建运算符，后面“对象和数组”部分会详细讲解
+
+/* 单目运算符 */
+// 基本数学运算
+console_printf(+ a); // 正
+console_printf(- a); // 负
+// 位运算
+console_printf(~ a); // 按位取反
+// 逻辑运算
+console_printf(! a); // 逻辑非
+// 特殊运算
+console_printf(typeof a); // 类型获取运算符，运算值形如 [Type]
+console_printf(f(@ obj)); // 隐藏参数修饰符，后面“函数”部分会详细讲解
+```
+
+### 对象与数组
+
+```
+// 通过 object 运算符创建对象。其右手值为内联初始化语句块。
+var obj = object {
+    // 通过变量、常量、函数定义语句来语义化地定义对象成员：
+    var a = 1;
+    const b = 2;
+    func c() {
+        // this 指代当前函数执行的上下文，下文“函数”部分将详解
+        return this.a + this.b;
+    }
+};
+obj.a = 3;
+// 解开注释后下面这行会报错，因为常量成员定义后不能被重新赋值
+// obj.b = 4;
+// 通过成员访问运算符 . 访问对象的成员
+console_printf(obj.c());
+// 将输出 5
+// 通过成员访问运算符 [ 访问对象的成员
+console_printf(obj["c"]());
+// 也将输出 5
+// 注意！ Nina 中对对象、数组中未定义成员的访问、赋值不受限制，例如下面这几行不会报错：
+obj.d = 2022;
+console_printf(obj.e);
+// 将输出 [Null] ，即空
+
+// 通过 array 运算符创建数组。其右手值为列表表达式。
+var arr = array (2020, 2021, 2022, 2023);
+console_printf(arr[3]);
+// 将输出 2023
+```
+
+### 逻辑控制
+
+```
+var a = 2023;
+// 简单的 if - elseif - else 语句。
+// 注意， Nina 会对 if 和 else 等语句的条件表达式进行自动类型转换，转为布尔类型再进行判断、分支
+if (a) {
+    console_printf("a is truethy.");
+}
+elseif (a == 2023) {
+    console_printf("a is 2023.");
+}
+else {
+    console_printf("a is unknown.");
+}
+// 将输出： a is truethy.
+
+// Nina 中只有 while 一种循环语句。
+var i = - 1;
+while ((i = i + 1) < 5) {
+    if (i + 1 == 2) {
+        // continue 语句表示直接跳到下一次循环
+        continue;
+    }
+    console_printf(i + 1);
+    if (i + 1 == 4) {
+        // break 语句表示退出当前整一个循环
+        break;
+    }
+}
+// 这里将会依次输出 1 3 4
+```
+
+### 函数
+
+```
+// 通过 func 语法糖定义函数。函数形参列表支持初始值。
+// 注意！函数形参初始值会在每次调用时计算！
+func f(a, b, c = random_range(1, 100)) {
+    // 通过 return 语句返回函数值或结束函数。
+    // return 语句支持省略表达式，此时函数值将设置为 null （空）
+    return a + b * c;
+}
+console_printf(f(3, 4));
+console_printf(f(3, 4));
+console_printf(f(3, 4));
+// 将输出三个不同的数
+
+// Nina 完全支持闭包。实际上， Nina 中所有函数都是闭包。
+// 例如上面的例子可以用 lambda 表达式转写成这样：
+var f = (a, b, c = random_range(1, 100)) => {
+    return () => { return a + b * c; };
+};
+console_printf(f(3, 4)());
+console_printf(f(3, 4)());
+console_printf(f(3, 4)());
+// 也是输出三个不同的数
+
+// 另外， Nina 中函数上下文中有 self 和 this 两个特殊变量
+// self 的含义很简单，即指向当前函数
+func fibonacci(n) {
     if (n == 1 || n == 2) {
         return 1;
     }
-    // self 变量指代当前函数
     return self(n - 1) + self(n - 2);
 }
-
-// 保存当前时间戳以计时
-var t1 = time_now();
-// 输出结果和耗时
-console_printf('fibo(33) = ' + fibo(33));
-console_printf('耗时：' + (time_now() - t1) * 1000 + ' ms');
+console_printf(fibonacci(33));
+// 将输出 3524578
+// 相比之下， this 的含义就有些难理解。
+// 从定义来说，作为对象或数组成员的函数，其特殊变量 this 指向函数所在的上下文（即其所在的对象或数组）：
+var obj = object {
+    var y = 2022;
+    func f() {
+        return this.y + 1;
+    }
+};
+console_printf(obj.f());
+// 将输出 2023
+var f = obj.f;
+// 解开下面这行注释后，将报错
+// 因为此时调用的函数 f 脱离了其所在对象，不再有有效的 this 上下文（此时 this 的值为 null ，即空）
+// console_printf(f());
+// 使用隐藏参数修饰符 @ ，可以修改 this 的指向。因此下面这行能正常输出
+console_printf(f(@ obj));
+// 将输出 2023
 ```
-这是一段计算斐波那契数的Nina代码。事实上，如果把关键字`func`改为`function`，这就是一段正经的的JavaScript代码！
 
-另外，Nina的几个基本属性：
-- 动态语言（在需要运行时才进行解释或编译）
-- 动态类型语言（类型在运行时确定和更改）
-- 弱类型语言（可隐式、自由地进行类型转换）
+### 异常处理
 
-这几点也与JavaScript完全一致！看来这对姐妹花是亲生的没错了。
+```
+// 使用 try - catch 语句进行异常捕获。
+// 注意！编译时的致命错误（语法错误等）不能被 try - catch 捕获。
+try {
+    var a = null[0];
+}
+catch {
+    console_printf("");
+    console_printf("----- 捕获到异常：");
+    // 通过特殊变量 exception 获取捕获到的异常信息
+    console_printf("错误代号：" + exception.code);
+    console_printf("错误信息：" + exception.message);
+    console_printf("");
+}
 
-# 进一步了解Nina
-由于Nina懒得写更多的自我介绍，你可以翻看项目文件中的[examples](https://github.com/jwhgzs/nina/blob/master/examples)，结合注释来学习哦！
+// 使用内置函数 throw(message) 来抛出自定义异常
+try {
+    throw("这是自定义的异常哦！~");
+}
+catch {
+    console_printf("");
+    console_printf("----- 捕获到异常：");
+    console_printf("错误代号：" + exception.code);
+    console_printf("错误信息：" + exception.message);
+    console_printf("");
+}
+```
 
-# Nina的VSCode扩展
-Nina的语法高亮扩展在VSCode扩展商城上线了哦！直接搜“Nina”就有了！[源码 github 地址](https://github.com/jwhgzs/nina-extension)~
+### 动态运行
 
-虽然只是一个玩乐项目，但是加上扩展玩起来也开心一些呢~
+动态运行作为脚本语言的“必备技能”， Nina 也不例外~
+
+```
+// 通过 eval(code, argument) 动态执行代码，并传递参数
+console_printf(
+    eval(
+        "
+            // 通过特殊变量 argument 获取从上端传递来的数据
+            // 用顶级的 return 语句向上端返回值
+            return argument + 1;
+        ",
+        // 第二个参数是要传递给动态代码的数据
+        2022
+    )
+);
+// 将输出 2023
+```
+
+### 模块化语法控制
+
+这是 Nina 最大的特色——模块化语法控制。有了它，你可以轻易地转换语法和特性，体验不同的语言风格。
+
+#### 强类型模式
+
+Nina 默认是弱类型的。不过你可以通过 with 语句进行模块化语法控制，改变这个特性。
+
+```
+// 使用 with 语句控制语法模块，启用强类型模式
+// 注意！ with 语句只能出现在第一句。
+with "strongly";
+// 此时若解开下面一行的注释，将会报错，因为启用了强类型语法模块， Nina 将不允许进行隐式类型转换
+// console_printf("2" + 4);
+// 利用 number(data) 和 string(data) 来进行显示类型转换
+console_printf("2" + string(4));
+console_printf(number("2") + 4);
+// 分别输出： 24 6
+
+// 不过有一点需要注意，无论在强类型还是弱类型模式，除了 console_print 等特殊函数， Nina 的内置函数都是强类型的。
+// 解开下面一行的注释将会报错（无论开启或关闭强类型模式）
+// 因为调用内置函数时 Nina 不允许进行隐式类型转换（即此时为强类型模式）
+// console_printf(math_log("2", 10));
+```
+
+#### 中文模式
+
+Nina 默认不支持中文作标识符名，也没有中文关键字的支持。你可以通过 with 语句启用它们。
+
+```
+// 使用 `应用` 语句（等价于 with 语句）启用中文模式
+// 为了不出现“中英混杂”， Nina 允许 `应用` 语句在未启用中文模式时也可以使用
+// 另外，语法模块名也默认有中英两个版本可以使用：
+// 下面这行等价于： with "chinese", "strongly";
+应用 "中文", "强类型";
+// 终于支持了中文标识符！
+函数 初始函数() {
+    // 此时内置函数也做了汉化，详见下一部分的表
+    输出换行("你好，世界");
+}
+初始函数();
+```
+
+### 内置中文模式翻译表
+
+由于时间问题，内置常量、函数的解释暂时不做，请先望文生义、将就用一下哦~
+
+另外，下表标记“中文”不是单纯的翻译哦，是启用了中文语法模块后（下文详解）对应的函数名称！
+
+#### 关键字
+
+- `var` ，中文 `变量`
+- `const` ，中文 `常量`
+- `func` ，中文 `函数`
+- `if` ，中文 `如果`
+- `else` ，中文 `否则`
+- `elseif` ，中文 `否则如果`
+- `while` ，中文 `条件循环`
+- `return` ，中文 `返回`
+- `break` ，中文 `退出循环`
+- `continue` ，中文 `继续循环`
+- `try` ，中文 `尝试`
+- `catch` ，中文 `捕捉`
+- `with` ，中文 `应用`
+
+#### 常量
+
+- `null` ，中文 `空`
+- `true` ，中文 `真`
+- `false` ，中文 `假`
+- `math_PI` ，中文 `数学_PI`
+- `math_E` ，中文 `数学_E`
+
+#### 函数
+
+- `number` ，中文 `到数字`
+- `string` ，中文 `到字符串`
+- `eval` ，中文 `执行`
+- `throw` ，中文 `抛出`
+- `console_print` ，中文 `输出`
+- `console_printf` ，中文 `输出换行`
+- `console_read` ，中文 `输入`
+- `console_exit` ，中文 `退出`
+- `string_at` ，中文 `字符串_取字符`
+- `string_sub` ，中文 `字符串_截取`
+- `string_sub_to_tail` ，中文 `字符串_截取到末尾`
+- `string_split` ，中文 `字符串_分割`
+- `string_split_count` ，中文 `字符串_按次数分割`
+- `string_to_array` ，中文 `字符串_字符串到数组`
+- `string_from_array` ，中文 `字符串_数组到字符串`
+- `string_from_array_join` ，中文 `字符串_连接数组到字符串`
+- `string_replace` ，中文 `字符串_替换`
+- `string_replace_count` ，中文 `字符串_按次数替换`
+- `string_upper` ，中文 `字符串_到大写`
+- `string_lower` ，中文 `字符串_到小写`
+- `string_length` ，中文 `字符串_取长度`
+- `array_length` ，中文 `数组_取长度`
+- `array_append` ，中文 `数组_添加项`
+- `array_insert` ，中文 `数组_插入项`
+- `array_pop` ，中文 `数组_移除末尾项`
+- `array_remove` ，中文 `数组_移除项`
+- `array_clear` ，中文 `数组_清空`
+- `array_find` ，中文 `数组_查找值`
+- `array_find_last` ，中文 `数组_反向查找值`
+- `array_to_JSON` ，中文 `数组_数组到JSON`
+- `array_from_JSON` ，中文 `数组_JSON到数组`
+- `object_length` ，中文 `对象_取长度`
+- `object_has` ，中文 `对象_是否存在键`
+- `object_find` ，中文 `对象_查找值`
+- `object_find_last` ，中文 `对象_反向查找值`
+- `object_remove` ，中文 `对象_移除项`
+- `object_clear` ，中文 `对象_清空`
+- `object_to_JSON` ，中文 `对象_对象到JSON`
+- `object_from_JSON` ，中文 `对象_JSON到对象`
+- `time_now` ，中文 `时间_取当前时间戳`
+- `time_to_string` ，中文 `时间_时间戳到字符串`
+- `time_to_object` ，中文 `时间_时间戳到时间对象`
+- `time_from_string` ，中文 `时间_字符串到时间戳`
+- `random_raw` ，中文 `随机数_原始值`
+- `random_range` ，中文 `随机数_有范围`
+- `math_floor` ，中文 `数学_向下舍入`
+- `math_ceil` ，中文 `数学_向上舍入`
+- `math_round` ，中文 `数学_四舍五入`
+- `math_round_digit` ，中文 `数学_按位数四舍五入`
+- `math_sin` ，中文 `数学_正弦`
+- `math_cos` ，中文 `数学_余弦`
+- `math_tan` ，中文 `数学_正切`
+- `math_asin` ，中文 `数学_反正弦`
+- `math_acos` ，中文 `数学_反余弦`
+- `math_atan` ，中文 `数学_反正切`
+- `math_sqrt` ，中文 `数学_平方根`
+- `math_abs` ，中文 `数学_绝对值`
+- `math_max` ，中文 `数学_最大值`
+- `math_min` ，中文 `数学_最小值`
+- `math_log` ，中文 `数学_对数`
+
+#### 特殊变量
+
+- `self` ，中文 `自身函数`
+- `this` ，中文 `自身对象`
+- `argument` ，中文 `参数`
+- `exception` ，中文 `异常`
+
+#### 运算符
+
+- `typeof` ，中文 `取类型`
+- `object` ，中文 `新对象`
+- `array` ，中文 `新数组`
