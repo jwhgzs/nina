@@ -460,6 +460,11 @@ static class NinaILCompiler {
                         _pos_table: _pos_table,
                         _ss: _ss
                     );
+                    if (tmp.annos.Contains(
+                            NinaConstsProviderUtil.NINA_ANNO_STRONGLY))
+                        _g.Emit(OpCodes.Ldc_I4_1);
+                    else
+                        _g.Emit(OpCodes.Ldc_I4_0);
                     _g.Emit(
                         OpCodes.Call,
                         typeof(NinaAPIUtil).GetMethod("member_set") !
@@ -528,6 +533,11 @@ static class NinaILCompiler {
                     _pos_table: _pos_table,
                     _ss: _ss
                 );
+                if (binary.annos.Contains(
+                        NinaConstsProviderUtil.NINA_ANNO_STRONGLY))
+                    _g.Emit(OpCodes.Ldc_I4_1);
+                else
+                    _g.Emit(OpCodes.Ldc_I4_0);
                 _g.Emit(
                     OpCodes.Call,
                     typeof(NinaAPIUtil).GetMethod("member_get") !
@@ -585,6 +595,11 @@ static class NinaILCompiler {
                             _pos_table: _pos_table,
                             _ss: _ss
                         );
+                        if (tmp2.annos.Contains(
+                                NinaConstsProviderUtil.NINA_ANNO_STRONGLY))
+                            _g.Emit(OpCodes.Ldc_I4_1);
+                        else
+                            _g.Emit(OpCodes.Ldc_I4_0);
                         _g.Emit(
                             OpCodes.Call,
                             typeof(NinaAPIUtil).GetMethod("member_get") !
@@ -758,8 +773,8 @@ static class NinaILCompiler {
                             + binary.type.ToString()
                             + (
                                 binary.annos.Contains(
-                                    NinaConstsProviderUtil.NINA_ANNO_STRICT)
-                                ? NinaConstsProviderUtil.NINA_APIUTIL_STRICT_SUFFIX
+                                    NinaConstsProviderUtil.NINA_ANNO_STRONGLY)
+                                ? NinaConstsProviderUtil.NINA_APIUTIL_STRONGLY_SUFFIX
                                 : ""
                             )
                     ) !
@@ -788,8 +803,8 @@ static class NinaILCompiler {
                         + unary.type.ToString()
                         + (
                             unary.annos.Contains(
-                                NinaConstsProviderUtil.NINA_ANNO_STRICT)
-                            ? NinaConstsProviderUtil.NINA_APIUTIL_STRICT_SUFFIX
+                                NinaConstsProviderUtil.NINA_ANNO_STRONGLY)
+                            ? NinaConstsProviderUtil.NINA_APIUTIL_STRONGLY_SUFFIX
                             : ""
                         )
                 ) !
@@ -850,6 +865,7 @@ static class NinaILCompiler {
                         else
                             _g.Emit(OpCodes.Ldc_I4_0);
                         _g.Emit(OpCodes.Ldc_I4_1);
+                        _g.Emit(OpCodes.Ldc_I4_1);
                         _g.Emit(
                             OpCodes.Call,
                             typeof(NinaAPIUtil).GetMethod("member_init") !
@@ -896,6 +912,7 @@ static class NinaILCompiler {
                     );
                     _g.Emit(OpCodes.Ldc_I4_0);
                     _g.Emit(OpCodes.Ldc_I4_0);
+                    _g.Emit(OpCodes.Ldc_I4_1);
                     _g.Emit(
                         OpCodes.Call,
                         typeof(NinaAPIUtil).GetMethod("member_init") !

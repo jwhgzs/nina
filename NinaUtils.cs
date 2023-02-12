@@ -6,10 +6,10 @@ static class NinaConstsProviderUtil {
     public const string NINA_ID_PREFIX = "NinaGlobal__";
     public const string NINA_APIUTIL_OPERATOR_PREFIX = "op";
     public const string NINA_APIUTIL_CONVERTION_PREFIX = "to";
-    public const string NINA_APIUTIL_STRICT_SUFFIX = "S";
+    public const string NINA_APIUTIL_STRONGLY_SUFFIX = "S";
     public const string NINA_ANNO_SPECIALARG = "NINA_ANNO_SPECIALARG";
     public const string NINA_ANNO_SPECIALRETURN = "NINA_ANNO_SPECIALRETURN";
-    public const string NINA_ANNO_STRICT = "NINA_ANNO_STRICT";
+    public const string NINA_ANNO_STRONGLY = "NINA_ANNO_STRONGLY";
     public const string IL_ASSEMBLY_ID = "NinaRuntime";
     public const string IL_MODULE_ID = "NinaRuntimeModule";
     public const string IL_ENTRYCLASS_ID = "NinaEntry";
@@ -26,64 +26,92 @@ static class NinaCodeBlockUtil {
         ['{'] = NinaSymbolType.CBraL,
         ['}'] = NinaSymbolType.CBraR
     };
-    public static Dictionary<string, NinaKeywordType> keywords
+    public static Dictionary<string, NinaKeywordType> keywords_chinese
             = new Dictionary<string, NinaKeywordType> {
-        ["var"] = NinaKeywordType.Var,
-        ["const"] = NinaKeywordType.Const,
-        ["func"] = NinaKeywordType.Func,
-        ["if"] = NinaKeywordType.If,
-        ["else"] = NinaKeywordType.Else,
-        ["elseif"] = NinaKeywordType.Elseif,
-        ["while"] = NinaKeywordType.While,
-        ["return"] = NinaKeywordType.Return,
-        ["break"] = NinaKeywordType.Break,
-        ["continue"] = NinaKeywordType.Continue,
-        ["try"] = NinaKeywordType.Try,
-        ["catch"] = NinaKeywordType.Catch,
-        ["with"] = NinaKeywordType.With
+        ["变量"] = NinaKeywordType.Var,
+        ["常量"] = NinaKeywordType.Const,
+        ["函数"] = NinaKeywordType.Func,
+        ["如果"] = NinaKeywordType.If,
+        ["否则"] = NinaKeywordType.Else,
+        ["否则如果"] = NinaKeywordType.Elseif,
+        ["循环"] = NinaKeywordType.While,
+        ["返回"] = NinaKeywordType.Return,
+        ["退出循环"] = NinaKeywordType.Break,
+        ["继续循环"] = NinaKeywordType.Continue,
+        ["尝试"] = NinaKeywordType.Try,
+        ["捕捉"] = NinaKeywordType.Catch,
+        ["应用"] = NinaKeywordType.With
     };
+    public static Dictionary<string, NinaKeywordType> keywords
+            = NinaCompilerUtil.merge_dictionaries(
+        keywords_chinese,
+        new Dictionary<string, NinaKeywordType> {
+            ["var"] = NinaKeywordType.Var,
+            ["const"] = NinaKeywordType.Const,
+            ["func"] = NinaKeywordType.Func,
+            ["if"] = NinaKeywordType.If,
+            ["else"] = NinaKeywordType.Else,
+            ["elseif"] = NinaKeywordType.Elseif,
+            ["while"] = NinaKeywordType.While,
+            ["return"] = NinaKeywordType.Return,
+            ["break"] = NinaKeywordType.Break,
+            ["continue"] = NinaKeywordType.Continue,
+            ["try"] = NinaKeywordType.Try,
+            ["catch"] = NinaKeywordType.Catch,
+            ["with"] = NinaKeywordType.With
+        }
+    );
     public static List<string> specialIdentifiers
             = new List<string> {
         "self", "this", "argument", "exception"
     };
-    public static Dictionary<string, NinaOperatorType> operators
+    public static Dictionary<string, NinaOperatorType> operators_chinese
             = new Dictionary<string, NinaOperatorType> {
-        ["+"] = NinaOperatorType.Add,
-        ["-"] = NinaOperatorType.Sub,
-        ["*"] = NinaOperatorType.Mut,
-        ["/"] = NinaOperatorType.Div,
-        ["%"] = NinaOperatorType.Rem,
-        ["**"] = NinaOperatorType.Pow,
-        ["="] = NinaOperatorType.Equ,
-        ["("] = NinaOperatorType.BraL,
-        [")"] = NinaOperatorType.BraR,
-        ["["] = NinaOperatorType.MBraL,
-        ["]"] = NinaOperatorType.MBraR,
-        ["."] = NinaOperatorType.Dot,
-        [","] = NinaOperatorType.Com,
-        ["&"] = NinaOperatorType.And,
-        ["|"] = NinaOperatorType.Or,
-        ["^"] = NinaOperatorType.XOr,
-        ["~"] = NinaOperatorType.Not,
-        ["&&"] = NinaOperatorType.LAnd,
-        ["?"] = NinaOperatorType.LAnd,
-        ["||"] = NinaOperatorType.LOr,
-        [":"] = NinaOperatorType.LOr,
-        ["!"] = NinaOperatorType.LNot,
-        ["=="] = NinaOperatorType.LEqu,
-        ["!="] = NinaOperatorType.LNEqu,
-        [">"] = NinaOperatorType.More,
-        ["<"] = NinaOperatorType.Less,
-        [">="] = NinaOperatorType.MoreE,
-        ["<="] = NinaOperatorType.LessE,
-        ["typeof"] = NinaOperatorType.Typeof,
-        ["=>"] = NinaOperatorType.Arr,
-        ["<<"] = NinaOperatorType.SftL,
-        [">>"] = NinaOperatorType.SftR,
-        ["object"] = NinaOperatorType.Object,
-        ["array"] = NinaOperatorType.Array,
-        ["@"] = NinaOperatorType.At
+        ["取类型"] = NinaOperatorType.Typeof,
+        ["新对象"] = NinaOperatorType.Object,
+        ["新数组"] = NinaOperatorType.Array
     };
+    public static Dictionary<string, NinaOperatorType> operators
+            = NinaCompilerUtil.merge_dictionaries(
+        operators_chinese,
+        new Dictionary<string, NinaOperatorType> {
+            ["+"] = NinaOperatorType.Add,
+            ["-"] = NinaOperatorType.Sub,
+            ["*"] = NinaOperatorType.Mut,
+            ["/"] = NinaOperatorType.Div,
+            ["%"] = NinaOperatorType.Rem,
+            ["**"] = NinaOperatorType.Pow,
+            ["="] = NinaOperatorType.Equ,
+            ["("] = NinaOperatorType.BraL,
+            [")"] = NinaOperatorType.BraR,
+            ["["] = NinaOperatorType.MBraL,
+            ["]"] = NinaOperatorType.MBraR,
+            ["."] = NinaOperatorType.Dot,
+            [","] = NinaOperatorType.Com,
+            ["&"] = NinaOperatorType.And,
+            ["|"] = NinaOperatorType.Or,
+            ["^"] = NinaOperatorType.XOr,
+            ["~"] = NinaOperatorType.Not,
+            ["&&"] = NinaOperatorType.LAnd,
+            ["?"] = NinaOperatorType.LAnd,
+            ["||"] = NinaOperatorType.LOr,
+            [":"] = NinaOperatorType.LOr,
+            ["!"] = NinaOperatorType.LNot,
+            ["=="] = NinaOperatorType.LEqu,
+            ["!="] = NinaOperatorType.LNEqu,
+            [">"] = NinaOperatorType.More,
+            ["<"] = NinaOperatorType.Less,
+            [">="] = NinaOperatorType.MoreE,
+            ["<="] = NinaOperatorType.LessE,
+            ["typeof"] = NinaOperatorType.Typeof,
+            ["=>"] = NinaOperatorType.Arr,
+            ["<<"] = NinaOperatorType.SftL,
+            [">>"] = NinaOperatorType.SftR,
+            ["object"] = NinaOperatorType.Object,
+            ["array"] = NinaOperatorType.Array,
+            ["@"] = NinaOperatorType.At
+        }
+    );
     public static Dictionary<char, NinaOperatorType> operators_ch
             = new Dictionary<char, NinaOperatorType> {
         ['+'] = NinaOperatorType.Add,
@@ -166,8 +194,10 @@ static class NinaCodeBlockUtil {
     };
     public static Dictionary<string, NinaWithStatementTypes> withStatementTypes
             = new Dictionary<string, NinaWithStatementTypes> {
-        ["strict"] = NinaWithStatementTypes.Strict,
-        ["chinese"] = NinaWithStatementTypes.Chinese
+        ["strongly"] = NinaWithStatementTypes.Strongly,
+        ["chinese"] = NinaWithStatementTypes.Chinese,
+        ["强类型"] = NinaWithStatementTypes.Strongly,
+        ["中文"] = NinaWithStatementTypes.Chinese
     };
 
     public static bool supposeSymbol(char _ch, out NinaSymbolType _out) {

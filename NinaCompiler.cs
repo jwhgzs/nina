@@ -244,6 +244,15 @@ static class NinaCompiler {
 
         for (++ _i; _i < _blocks.Count; ++ _i) {
             NinaCodeBlock v = _blocks[_i];
+            if (v.val_kw_chinese == true
+                    && v.val_kw != NinaKeywordType.With
+                    && ! _withs.Contains(NinaWithStatementTypes.Chinese)) {
+                NinaError.error(
+                    "无效的保留字.",
+                    569012,
+                    new NinaErrorPosition(v.file, v.line, v.col)
+                );
+            }
             if (v.val_sy == NinaSymbolType.CBraR) {
                 if (_scope == NinaScopeType.Root) {
                     NinaError.error(

@@ -48,5 +48,5 @@ enum NinaScopeType {
 
 enum NinaWithStatementTypes {
     None,
-    Strict, Chinese
+    Strongly, Chinese
 }

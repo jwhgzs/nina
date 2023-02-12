@@ -104,6 +104,13 @@ public static class NinaAPIUtil {
         else
             return toTypeDesc(_o);
     }
+    public static string toStringS(object _o) {
+        if (_o is string s)
+            return s;
+        else
+            NinaError.error("无法进行到 String 的类型转换.", 149012);
+        return "";
+    }
 
     public static object opAdd(object _lhs, object _rhs) {
         if (_lhs is string a || _rhs is string b)
@@ -264,16 +271,20 @@ public static class NinaAPIUtil {
     public static object opTypeof(object _o) {
         return toTypeDesc(_o);
     }
-    
-    public static object member_get(object _obj, object _key) {
+    public static object member_get(
+            object _obj, object _key, bool _isStrict) {
         if (_obj is NinaDataArray arr) {
-            int key = (int) toNumber(_key);
+            int key = _isStrict
+                ? (int) toNumberS(_key)
+                : (int) toNumber(_key);
             return key >= 0 && key <= arr.Count - 1
                 ? arr[key]
                 : null !;
         }
         else if (_obj is NinaDataObject obj) {
-            string key = toString(_key);
+            string key = _isStrict
+                ? toStringS(_key)
+                : toString(_key);
             return obj.ContainsKey(key) ? obj[key] : null !;
         }
         else {
@@ -281,27 +292,30 @@ public static class NinaAPIUtil {
         }
         return null !;
     }
-
     public static object member_init(
-            object _obj, object _key, object _val, int _isConst,
-            int _allowSetConst) {
+            object _obj, object _key, object _val, bool _isConst,
+            bool _allowSetConst, bool _isStrict) {
         if (_obj is NinaDataArray arr) {
-            int key = (int) toNumber(_key);
+            int key = _isStrict
+                ? (int) toNumberS(_key)
+                : (int) toNumber(_key);
             arr.EnsureCapacity(key + 1);
             while (arr.Count < key + 1)
                 arr.Add(null !);
             arr[key] = _val;
         }
         else if (_obj is NinaDataObject obj) {
-            string key = toString(_key);
-            if (obj.my_consts.Contains(key) && _allowSetConst == 0) {
+            string key = _isStrict
+                ? toStringS(_key)
+                : toString(_key);
+            if (obj.my_consts.Contains(key) && ! _allowSetConst) {
                 NinaError.error(
                     "无法给常量成员重新赋值.",
                     794922
                 );
             }
             obj[key] = _val;
-            if (_isConst != 0)
+            if (_isConst)
                 obj.my_consts.Add(key);
         }
         else {
@@ -310,8 +324,8 @@ public static class NinaAPIUtil {
         return _val;
     }
     public static object member_set(
-            object _obj, object _key, object _val) {
-        return member_init(_obj, _key, _val, 0, 0);
+            object _obj, object _key, object _val, bool _isStrict) {
+        return member_init(_obj, _key, _val, false, false, _isStrict);
     }
 
     public static void error(string _msg, int _uniqueCode) {
@@ -410,19 +424,30 @@ public static class NinaAPIUtil {
 
 public static class NinaAPI {
     public static object @null = null !;
+    public static object 空 = @null;
     public static object @true = true;
+    public static object 真 = @true;
     public static object @false = false;
+    public static object 假 = @false;
     public static object math_PI = Math.PI;
+    public static object 数学_PI = math_PI;
     public static object math_E = Math.E;
+    public static object 数学_E = math_E;
 
     public static object number(object _data) {
         return NinaAPIUtil.toNumber(_data);
     }
+    public static object 到数字(object _data) {
+        return number(_data);
+    }
     public static object @string(object _data) {
         return NinaAPIUtil.toString(_data);
     }
+    public static object 到字符串(object _data) {
+        return @string(_data);
+    }
     public static object eval(object _code, object _arg) {
-        string code = NinaAPIUtil.toString(_code);
+        string code = NinaAPIUtil.toStringS(_code);
         try {
             return NinaCore.execute(
                 "[动态代码: " + Guid.NewGuid().ToString("N") + "]",
@@ -438,9 +463,15 @@ public static class NinaAPI {
         }
         return null !;
     }
+    public static object 执行(object _code, object _arg) {
+        return eval(_code, _arg);
+    }
     public static object @throw(object _msg) {
         NinaError.error("用户自定义的异常：\n" + _msg, - 1);
         return null !;
+    }
+    public static object 抛出(object _msg) {
+        return @throw(_msg);
     }
 
     public static object console_print(object _data) {
@@ -448,22 +479,34 @@ public static class NinaAPI {
         Console.Write(v);
         return null !;
     }
+    public static object 输出(object _data) {
+        return console_print(_data);
+    }
     public static object console_printf(object _data) {
         string v = NinaAPIUtil.toString(_data);
         Console.WriteLine(v);
         return null !;
     }
+    public static object 输出换行(object _data) {
+        return console_printf(_data);
+    }
     public static object console_read() {
         return Console.ReadLine() !;
+    }
+    public static object 输入() {
+        return console_read();
     }
     public static object console_exit() {
         Environment.Exit(- 2);
         return null !;
     }
+    public static object 退出() {
+        return console_exit();
+    }
 
     public static object string_at(object _str, object _i) {
-        string str = NinaAPIUtil.toString(_str);
-        int i = (int) NinaAPIUtil.toNumber(_i);
+        string str = NinaAPIUtil.toStringS(_str);
+        int i = (int) NinaAPIUtil.toNumberS(_i);
         try {
             return str[i].ToString();
         }
@@ -471,10 +514,13 @@ public static class NinaAPI {
             return null !;
         }
     }
+    public static object 字符串_取字符(object _str, object _i) {
+        return string_at(_str, _i);
+    }
     public static object string_sub(object _str, object _i, object _n) {
-        string str = NinaAPIUtil.toString(_str);
-        int i = (int) NinaAPIUtil.toNumber(_i);
-        int n = (int) NinaAPIUtil.toNumber(_n);
+        string str = NinaAPIUtil.toStringS(_str);
+        int i = (int) NinaAPIUtil.toNumberS(_i);
+        int n = (int) NinaAPIUtil.toNumberS(_n);
         try {
             return str.Substring(i, n);
         }
@@ -482,9 +528,12 @@ public static class NinaAPI {
             return null !;
         }
     }
+    public static object 字符串_截取(object _str, object _i, object _n) {
+        return string_sub(_str, _i, _n);
+    }
     public static object string_sub_to_tail(object _str, object _i) {
-        string str = NinaAPIUtil.toString(_str);
-        int i = (int) NinaAPIUtil.toNumber(_i);
+        string str = NinaAPIUtil.toStringS(_str);
+        int i = (int) NinaAPIUtil.toNumberS(_i);
         try {
             return str.Substring(i);
         }
@@ -492,9 +541,12 @@ public static class NinaAPI {
             return null !;
         }
     }
+    public static object 字符串_截取到末尾(object _str, object _i) {
+        return string_sub_to_tail(_str, _i);
+    }
     public static object string_split(object _str, object _sub) {
-        string str = NinaAPIUtil.toString(_str);
-        string sub = NinaAPIUtil.toString(_sub);
+        string str = NinaAPIUtil.toStringS(_str);
+        string sub = NinaAPIUtil.toStringS(_sub);
         try {
             return new NinaDataArray(
                 str.Split(sub).Select(v => (object) v).ToList()
@@ -504,10 +556,13 @@ public static class NinaAPI {
             return null !;
         }
     }
+    public static object 字符串_分割(object _str, object _sub) {
+        return string_split(_str, _sub);
+    }
     public static object string_split_count(object _str, object _sub, object _n) {
-        string str = NinaAPIUtil.toString(_str);
-        string sub = NinaAPIUtil.toString(_sub);
-        int n = (int) NinaAPIUtil.toNumber(_n);
+        string str = NinaAPIUtil.toStringS(_str);
+        string sub = NinaAPIUtil.toStringS(_sub);
+        int n = (int) NinaAPIUtil.toNumberS(_n);
         try {
             return new NinaDataArray(
                 str.Split(sub, n).Select(v => (object) v).ToList()
@@ -517,8 +572,11 @@ public static class NinaAPI {
             return null !;
         }
     }
+    public static object 字符串_按次数分割(object _str, object _sub, object _n) {
+        return string_split_count(_str, _sub, _n);
+    }
     public static object string_to_array(object _str) {
-        string str = NinaAPIUtil.toString(_str);
+        string str = NinaAPIUtil.toStringS(_str);
         try {
             return
                 new NinaDataArray(
@@ -529,55 +587,81 @@ public static class NinaAPI {
             return null !;
         }
     }
+    public static object 字符串_字符串到数组(object _str) {
+        return string_to_array(_str);
+    }
     public static object string_from_array(object _arr) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null)
             return null !;
         string ret = "";
         for (int i = 0; i < arr.Count; ++ i) {
-            ret += NinaAPIUtil.toString(arr[i]);
+            ret += NinaAPIUtil.toStringS(arr[i]);
         }
         return ret;
     }
-    public static object string_join(object _arr, object _sub) {
+    public static object 字符串_数组到字符串(object _arr) {
+        return string_from_array(_arr);
+    }
+    public static object string_from_array_join(object _arr, object _sub) {
         NinaDataArray? arr = _arr as NinaDataArray;
-        string sub = NinaAPIUtil.toString(_sub);
+        string sub = NinaAPIUtil.toStringS(_sub);
         if (arr == null)
             return null !;
         string ret = "";
         for (int i = 0; i < arr.Count; ++ i) {
             if (i > 0)
                 ret += sub;
-            ret += NinaAPIUtil.toString(arr[i]);
+            ret += NinaAPIUtil.toStringS(arr[i]);
         }
         return ret;
     }
+    public static object 字符串_连接数组到字符串(
+            object _str, object _sub, object _rep) {
+        return string_replace(_str, _sub, _rep);
+    }
     public static object string_replace(object _str, object _sub, object _rep) {
-        string str = NinaAPIUtil.toString(_str);
-        string sub = NinaAPIUtil.toString(_sub);
-        string rep = NinaAPIUtil.toString(_rep);
+        string str = NinaAPIUtil.toStringS(_str);
+        string sub = NinaAPIUtil.toStringS(_sub);
+        string rep = NinaAPIUtil.toStringS(_rep);
         return str.Replace(sub, rep);
+    }
+    public static object 字符串_替换(object _str, object _sub, object _rep) {
+        return string_replace(_str, _sub, _rep);
     }
     public static object string_replace_count(
             object _str, object _sub, object _rep, object _n) {
-        string str = NinaAPIUtil.toString(_str);
-        string sub = NinaAPIUtil.toString(_sub);
-        string rep = NinaAPIUtil.toString(_rep);
-        int n = (int) NinaAPIUtil.toNumber(_n);
+        string str = NinaAPIUtil.toStringS(_str);
+        string sub = NinaAPIUtil.toStringS(_sub);
+        string rep = NinaAPIUtil.toStringS(_rep);
+        int n = (int) NinaAPIUtil.toNumberS(_n);
         string[] arr = str.Split(sub, n + 1);
         return string.Join(rep, arr);
     }
+    public static object 字符串_按次数替换(
+            object _str, object _sub, object _rep, object _n) {
+        return string_replace_count(_str, _sub, _rep, _n);
+    }
     public static object string_upper(object _str) {
-        string str = NinaAPIUtil.toString(_str);
+        string str = NinaAPIUtil.toStringS(_str);
         return str.ToUpper();
     }
+    public static object 字符串_到大写(object _str) {
+        return string_upper(_str);
+    }
     public static object string_lower(object _str) {
-        string str = NinaAPIUtil.toString(_str);
+        string str = NinaAPIUtil.toStringS(_str);
         return str.ToLower();
     }
+    public static object 字符串_到小写(object _str) {
+        return string_lower(_str);
+    }
     public static object string_length(object _str) {
-        string str = NinaAPIUtil.toString(_str);
+        string str = NinaAPIUtil.toStringS(_str);
         return (double) str.Length;
+    }
+    public static object 字符串_取长度(object _str) {
+        return string_length(_str);
     }
 
     public static object array_length(object _arr) {
@@ -587,6 +671,9 @@ public static class NinaAPI {
         }
         return (double) arr!.Count;
     }
+    public static object 数组_取项目数(object _arr) {
+        return array_length(_arr);
+    }
     public static object array_append(object _arr, object _item) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
@@ -595,9 +682,12 @@ public static class NinaAPI {
         arr!.Add(_item);
         return true;
     }
+    public static object 数组_添加项(object _arr, object _item) {
+        return array_append(_arr, _item);
+    }
     public static object array_insert(object _arr, object _n, object _item) {
         NinaDataArray? arr = _arr as NinaDataArray;
-        int n = (int) NinaAPIUtil.toNumber(_n);
+        int n = (int) NinaAPIUtil.toNumberS(_n);
         if (arr == null) {
             NinaError.error("操作的数组无效.", 102914);
         }
@@ -608,6 +698,9 @@ public static class NinaAPI {
         catch {
             return false;
         }
+    }
+    public static object 数组_插入项(object _arr, object _n, object _item) {
+        return array_insert(_arr, _n, _item);
     }
     public static object array_pop(object _arr) {
         NinaDataArray? arr = _arr as NinaDataArray;
@@ -622,9 +715,12 @@ public static class NinaAPI {
             return false;
         }
     }
+    public static object 数组_移除末尾项(object _arr) {
+        return array_pop(_arr);
+    }
     public static object array_remove(object _arr, object _n) {
         NinaDataArray? arr = _arr as NinaDataArray;
-        int n = (int) NinaAPIUtil.toNumber(_n);
+        int n = (int) NinaAPIUtil.toNumberS(_n);
         if (arr == null) {
             NinaError.error("操作的数组无效.", 605912);
         }
@@ -636,6 +732,9 @@ public static class NinaAPI {
             return false;
         }
     }
+    public static object 数组_移除项(object _arr, object _n) {
+        return array_remove(_arr, _n);
+    }
     public static object array_clear(object _arr) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
@@ -644,17 +743,23 @@ public static class NinaAPI {
         arr!.Clear();
         return true;
     }
+    public static object 数组_清空(object _arr) {
+        return array_clear(_arr);
+    }
     public static object array_find(object _arr, object _item) {
         NinaDataArray? arr = _arr as NinaDataArray;
         if (arr == null) {
             NinaError.error("操作的数组无效.", 701901);
         }
         for (int i = 0; i < arr!.Count; ++ i) {
-            if (NinaAPIUtil.opLEqu_bool(arr![i], _item)) {
+            if (NinaAPIUtil.opLEquS_bool(arr![i], _item)) {
                 return (double) i;
             }
         }
         return - 1d;
+    }
+    public static object 数组_查找值(object _arr, object _item) {
+        return array_find(_arr, _item);
     }
     public static object array_find_last(object _arr, object _item) {
         NinaDataArray? arr = _arr as NinaDataArray;
@@ -662,11 +767,14 @@ public static class NinaAPI {
             NinaError.error("操作的数组无效.", 249931);
         }
         for (int i = arr!.Count - 1; i >= 0; -- i) {
-            if (NinaAPIUtil.opLEqu_bool(arr![i], _item)) {
+            if (NinaAPIUtil.opLEquS_bool(arr![i], _item)) {
                 return (double) i;
             }
         }
         return - 1d;
+    }
+    public static object 数组_反向查找值(object _arr, object _item) {
+        return array_find_last(_arr, _item);
     }
     private static JsonSerializerOptions json_option
             = new JsonSerializerOptions() {
@@ -692,8 +800,11 @@ public static class NinaAPI {
             return null !;
         }
     }
+    public static object 数组_数组到JSON(object _arr) {
+        return array_to_json(_arr);
+    }
     public static object array_from_json(object _json) {
-        string json = NinaAPIUtil.toString(_json);
+        string json = NinaAPIUtil.toStringS(_json);
         try {
             return
                 new NinaDataArray(
@@ -707,6 +818,9 @@ public static class NinaAPI {
             return null !;
         }
     }
+    public static object 数组_JSON到数组(object _json) {
+        return array_from_json(_json);
+    }
 
     public static object object_length(object _obj) {
         NinaDataObject? obj = _obj as NinaDataObject;
@@ -715,49 +829,62 @@ public static class NinaAPI {
         }
         return (double) obj!.Count;
     }
+    public static object 对象_取项目数(object _obj) {
+        return object_length(_obj);
+    }
     public static object object_has(object _obj, object _key) {
         NinaDataObject? obj = _obj as NinaDataObject;
-        string key = NinaAPIUtil.toString(_key);
+        string key = NinaAPIUtil.toStringS(_key);
         if (obj == null) {
             NinaError.error("操作的对象无效.", 123091);
         }
         return obj!.ContainsKey(key);
     }
+    public static object 对象_是否存在键(object _obj, object _key) {
+        return object_has(_obj, _key);
+    }
     public static object object_find(object _obj, object _item) {
         NinaDataObject? obj = _obj as NinaDataObject;
-        string item = NinaAPIUtil.toString(_item);
         if (obj == null) {
             NinaError.error("操作的对象无效.", 190341);
         }
         for (int i = 0; i < obj!.Count; ++ i) {
             var (k, v) = obj.ElementAt(i);
-            if (NinaAPIUtil.opLEqu_bool(v, item)) {
+            if (NinaAPIUtil.opLEquS_bool(v, _item)) {
                 return k;
             }
         }
         return null !;
     }
+    public static object 对象_查找值(object _obj, object _item) {
+        return object_find(_obj, _item);
+    }
     public static object object_find_last(object _obj, object _item) {
         NinaDataObject? obj = _obj as NinaDataObject;
-        string item = NinaAPIUtil.toString(_item);
         if (obj == null) {
             NinaError.error("操作的对象无效.", 765402);
         }
         for (int i = obj!.Count - 1; i >= 0; ++ i) {
             var (k, v) = obj.ElementAt(i);
-            if (NinaAPIUtil.opLEqu_bool(v, item)) {
+            if (NinaAPIUtil.opLEquS_bool(v, _item)) {
                 return k;
             }
         }
         return null !;
     }
+    public static object 对象_反向查找值(object _obj, object _item) {
+        return object_find_last(_obj, _item);
+    }
     public static object object_remove(object _obj, object _key) {
         NinaDataObject? obj = _obj as NinaDataObject;
-        string key = NinaAPIUtil.toString(_key);
+        string key = NinaAPIUtil.toStringS(_key);
         if (obj == null) {
             NinaError.error("操作的对象无效.", 790422);
         }
         return obj!.Remove(key) && obj!.my_consts.Remove(key);
+    }
+    public static object 对象_移除项(object _obj, object _key) {
+        return object_remove(_obj, _key);
     }
     public static object object_clear(object _obj) {
         NinaDataObject? obj = _obj as NinaDataObject;
@@ -767,7 +894,10 @@ public static class NinaAPI {
         obj!.Clear();
         return true;
     }
-    public static object object_to_json(object _obj) {
+    public static object 对象_清空(object _obj) {
+        return object_clear(_obj);
+    }
+    public static object object_to_JSON(object _obj) {
         NinaDataObject? obj = _obj as NinaDataObject;
         if (obj == null) {
             NinaError.error("操作的对象无效.", 102941);
@@ -782,8 +912,11 @@ public static class NinaAPI {
             return null !;
         }
     }
-    public static object object_from_json(object _json) {
-        string json = NinaAPIUtil.toString(_json);
+    public static object 对象_对象到JSON(object _obj) {
+        return object_to_JSON(_obj);
+    }
+    public static object object_from_JSON(object _json) {
+        string json = NinaAPIUtil.toStringS(_json);
         try {
             return
                 new NinaDataObject(
@@ -797,21 +930,30 @@ public static class NinaAPI {
             return null !;
         }
     }
+    public static object 对象_JSON到对象(object _json) {
+        return object_from_JSON(_json);
+    }
 
     public static object time_now() {
         TimeSpan ts
             = DateTime.Now.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0);
         return ts.TotalSeconds;
     }
+    public static object 时间_当前时间戳() {
+        return time_now();
+    }
     public static object time_to_string(object _time) {
-        double s = NinaAPIUtil.toNumber(_time);
+        double s = NinaAPIUtil.toNumberS(_time);
         DateTime now
             = DateTimeOffset.FromUnixTimeSeconds((long) s)
                 .LocalDateTime;
         return now.ToString();
     }
+    public static object 时间_时间戳到字符串(object _time) {
+        return time_to_string(_time);
+    }
     public static object time_to_object(object _time) {
-        double s = NinaAPIUtil.toNumber(_time);
+        double s = NinaAPIUtil.toNumberS(_time);
         DateTime now
             = DateTimeOffset.FromUnixTimeSeconds((long) s)
                 .LocalDateTime;
@@ -829,9 +971,12 @@ public static class NinaAPI {
             ["ms"] = (double) now.Millisecond
         };
     }
+    public static object 时间_时间戳到时间对象(object _time) {
+        return time_to_object(_time);
+    }
     public static object time_from_string(object _str) {
         bool ok = DateTime.TryParse(
-            NinaAPIUtil.toString(_str), out DateTime ret);
+            NinaAPIUtil.toStringS(_str), out DateTime ret);
         if (ok) {
             TimeSpan ts
                 = ret.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0);
@@ -841,72 +986,126 @@ public static class NinaAPI {
             return null !;
         }
     }
+    public static object 时间_字符串到时间戳(object _str) {
+        return time_from_string(_str);
+    }
 
     private static Random random_gener = new Random();
     public static object random_raw() {
         return random_gener.NextDouble();
     }
+    public static object 随机数_原始值() {
+        return random_raw();
+    }
     public static object random_range(object _min, object _max) {
-        double min = NinaAPIUtil.toNumber(_min);
-        double max = NinaAPIUtil.toNumber(_max);
+        double min = NinaAPIUtil.toNumberS(_min);
+        double max = NinaAPIUtil.toNumberS(_max);
         double d = random_gener.NextDouble();
         return min + d * (max - min);
     }
+    public static object 随机数_有范围(object _min, object _max) {
+        return random_range(_min, _max);
+    }
 
     public static object math_floor(object _n) {
-        double n = NinaAPIUtil.toNumber(_n);
+        double n = NinaAPIUtil.toNumberS(_n);
         return Math.Floor(n);
     }
+    public static object 数学_向下舍入(object _n) {
+        return math_floor(_n);
+    }
     public static object math_ceil(object _n) {
-        double n = NinaAPIUtil.toNumber(_n);
+        double n = NinaAPIUtil.toNumberS(_n);
         return Math.Ceiling(n);
     }
+    public static object 数学_向上舍入(object _n) {
+        return math_ceil(_n);
+    }
     public static object math_round(object _n) {
-        double n = NinaAPIUtil.toNumber(_n);
+        double n = NinaAPIUtil.toNumberS(_n);
         return Math.Round(n);
     }
+    public static object 数学_四舍五入(object _n) {
+        return math_round(_n);
+    }
     public static object math_round_digit(object _n, object _d) {
-        double n = NinaAPIUtil.toNumber(_n);
-        double d = NinaAPIUtil.toNumber(_d);
+        double n = NinaAPIUtil.toNumberS(_n);
+        double d = NinaAPIUtil.toNumberS(_d);
         return Math.Round(n, (int) d);
     }
+    public static object 数学_按位数四舍五入(object _n, object _d) {
+        return math_round_digit(_n, _d);
+    }
     public static object math_sin(object _a) {
-        return Math.Sin(NinaAPIUtil.toNumber(_a));
+        return Math.Sin(NinaAPIUtil.toNumberS(_a));
+    }
+    public static object 数学_正弦(object _a) {
+        return math_sin(_a);
     }
     public static object math_cos(object _a) {
-        return Math.Cos(NinaAPIUtil.toNumber(_a));
+        return Math.Cos(NinaAPIUtil.toNumberS(_a));
+    }
+    public static object 数学_余弦(object _a) {
+        return math_cos(_a);
     }
     public static object math_tan(object _a) {
-        return Math.Tan(NinaAPIUtil.toNumber(_a));
+        return Math.Tan(NinaAPIUtil.toNumberS(_a));
+    }
+    public static object 数学_正切(object _a) {
+        return math_tan(_a);
     }
     public static object math_asin(object _a) {
-        return Math.Asin(NinaAPIUtil.toNumber(_a));
+        return Math.Asin(NinaAPIUtil.toNumberS(_a));
+    }
+    public static object 数学_反正弦(object _a) {
+        return math_asin(_a);
     }
     public static object math_acos(object _a) {
-        return Math.Acos(NinaAPIUtil.toNumber(_a));
+        return Math.Acos(NinaAPIUtil.toNumberS(_a));
+    }
+    public static object 数学_反余弦(object _a) {
+        return math_acos(_a);
     }
     public static object math_atan(object _a) {
-        return Math.Atan(NinaAPIUtil.toNumber(_a));
+        return Math.Atan(NinaAPIUtil.toNumberS(_a));
+    }
+    public static object 数学_反正切(object _a) {
+        return math_atan(_a);
     }
     public static object math_sqrt(object _a) {
-        return Math.Sqrt(NinaAPIUtil.toNumber(_a));
+        return Math.Sqrt(NinaAPIUtil.toNumberS(_a));
+    }
+    public static object 数学_平方根(object _a) {
+        return math_sqrt(_a);
     }
     public static object math_abs(object _a) {
-        return Math.Abs(NinaAPIUtil.toNumber(_a));
+        return Math.Abs(NinaAPIUtil.toNumberS(_a));
+    }
+    public static object 数学_绝对值(object _a) {
+        return math_abs(_a);
     }
     public static object math_max(object _a, object _b) {
         return Math.Max(
-            NinaAPIUtil.toNumber(_a), NinaAPIUtil.toNumber(_b)
+            NinaAPIUtil.toNumberS(_a), NinaAPIUtil.toNumberS(_b)
         );
+    }
+    public static object 数学_最大(object _a, object _b) {
+        return math_max(_a, _b);
     }
     public static object math_min(object _a, object _b) {
         return Math.Min(
-            NinaAPIUtil.toNumber(_a), NinaAPIUtil.toNumber(_b)
+            NinaAPIUtil.toNumberS(_a), NinaAPIUtil.toNumberS(_b)
         );
+    }
+    public static object 数学_最小(object _a, object _b) {
+        return math_min(_a, _b);
     }
     public static object math_log(object _a, object _b) {
         return Math.Log(
-            NinaAPIUtil.toNumber(_a), NinaAPIUtil.toNumber(_b)
+            NinaAPIUtil.toNumberS(_a), NinaAPIUtil.toNumberS(_b)
         );
+    }
+    public static object 数学_对数(object _a, object _b) {
+        return math_log(_a, _b);
     }
 }

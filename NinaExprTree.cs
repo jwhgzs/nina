@@ -117,6 +117,13 @@ class NinaExprTree {
         }
         else if (type == NinaExprTreeType.Data) {
             if (block.type == NinaCodeBlockType.Identifier) {
+                if (block.val_id_chinese == true
+                        && ! _withs.Contains(NinaWithStatementTypes.Chinese)) {
+                    NinaError.error(
+                        "无效的标识符.", 568912,
+                        new NinaErrorPosition(block.file, block.line, block.col)
+                    );
+                }
                 return
                     new NinaASTIdentifierExpression(
                         NinaCompilerUtil.format_identifier(block.code),
@@ -145,6 +152,13 @@ class NinaExprTree {
             }
         }
         else if (type == NinaExprTreeType.Operator) {
+            if (block.val_op_chinese == true
+                    && ! _withs.Contains(NinaWithStatementTypes.Chinese)) {
+                NinaError.error(
+                    "无效的保留字.", 356193,
+                    new NinaErrorPosition(block.file, block.line, block.col)
+                );
+            }
             if (l == null || r == null) {
                 NinaError.error("莫名其妙的错误.", 584489);
             }
@@ -276,13 +290,16 @@ class NinaExprTree {
                     );
                 }
                 else if (block.val_op == NinaOperatorType.MBraL) {
-                    return
-                        new NinaASTBinaryExpression(
+                    NinaASTBinaryExpression ret
+                        = new NinaASTBinaryExpression(
                             _type: NinaOperatorType.MBraL,
                             _expr_l: expr_l,
                             _expr_r: expr_r,
                             pos
                         );
+                    if (_withs.Contains(NinaWithStatementTypes.Strongly))
+                        ret.annos.Add(NinaConstsProviderUtil.NINA_ANNO_STRONGLY);
+                    return ret;
                 }
                 else if (block.val_op == NinaOperatorType.Dot) {
                     NinaASTIdentifierExpression? id
@@ -295,8 +312,8 @@ class NinaExprTree {
                         );
                     }
                     else {
-                        return
-                            new NinaASTBinaryExpression(
+                        NinaASTBinaryExpression ret
+                            = new NinaASTBinaryExpression(
                                 _type: NinaOperatorType.MBraL,
                                 _expr_l: expr_l,
                                 _expr_r: new NinaASTLiteralExpression(
@@ -305,6 +322,9 @@ class NinaExprTree {
                                 ),
                                 pos
                             );
+                        if (_withs.Contains(NinaWithStatementTypes.Strongly))
+                            ret.annos.Add(NinaConstsProviderUtil.NINA_ANNO_STRONGLY);
+                        return ret;
                     }
                 }
                 else if (block.val_op == NinaOperatorType.Equ) {
@@ -324,8 +344,8 @@ class NinaExprTree {
                             _expr_r: expr_r,
                             pos
                         );
-                    if (_withs.Contains(NinaWithStatementTypes.Strict))
-                        ret.annos.Add(NinaConstsProviderUtil.NINA_ANNO_STRICT);
+                    if (_withs.Contains(NinaWithStatementTypes.Strongly))
+                        ret.annos.Add(NinaConstsProviderUtil.NINA_ANNO_STRONGLY);
                     return ret;
                 }
             }
@@ -395,8 +415,8 @@ class NinaExprTree {
                             _expr: expr,
                             pos
                         );
-                    if (_withs.Contains(NinaWithStatementTypes.Strict))
-                        ret.annos.Add(NinaConstsProviderUtil.NINA_ANNO_STRICT);
+                    if (_withs.Contains(NinaWithStatementTypes.Strongly))
+                        ret.annos.Add(NinaConstsProviderUtil.NINA_ANNO_STRONGLY);
                     return ret;
                 }
             }

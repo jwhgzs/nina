@@ -12,8 +12,10 @@ static class NinaCodeResolver {
         char? quote = null;
         bool isBSlash = false;
         bool isLineComment, isBlockComment, isNumber, isIdentifier;
+        bool isChineseIdentifier;
         isLineComment = isBlockComment = false;
         isNumber = isIdentifier = true;
+        isChineseIdentifier = false;
 
         char v;
         string? vs, con;
@@ -109,31 +111,52 @@ static class NinaCodeResolver {
                                     && ret.Last().val_op == NinaOperatorType.Dot) {
                                 ret.RemoveAt(ret.Count - 1);
                                 con = ret.Last().code + "." + buf;
-                                ret.Add(new NinaCodeBlock(_file, ret.Last().line,
-                                    ret.Last().col, con, NinaCodeBlockType.Number,
-                                    _assert_num: double.Parse(con)));
+                                ret.Add(
+                                    new NinaCodeBlock(
+                                        _file, ret.Last().line,
+                                        ret.Last().col, con, NinaCodeBlockType.Number,
+                                        _assert_num: double.Parse(con)
+                                    )
+                                );
                                 ret.RemoveAt(ret.Count - 2);
                             }
                             else {
-                                ret.Add(new NinaCodeBlock(_file, bufLine!.Value,
-                                    bufCol!.Value, buf, NinaCodeBlockType.Number,
-                                    _assert_num: double.Parse(buf)));
+                                ret.Add(
+                                    new NinaCodeBlock(
+                                        _file, bufLine!.Value,
+                                        bufCol!.Value, buf, NinaCodeBlockType.Number,
+                                        _assert_num: double.Parse(buf)
+                                    )
+                                );
                             }
                         }
                         else if (NinaCodeBlockUtil.supposeKeyword(buf, out NinaKeywordType kw)) {
-                            ret.Add(new NinaCodeBlock(_file, bufLine!.Value,
-                                bufCol!.Value, buf, NinaCodeBlockType.Keyword,
-                                _assert_kw: kw));
+                            ret.Add(
+                                new NinaCodeBlock(
+                                    _file, bufLine!.Value,
+                                    bufCol!.Value, buf, NinaCodeBlockType.Keyword,
+                                    _assert_kw: kw
+                                )
+                            );
                         }
                         else if (NinaCodeBlockUtil.supposeOperator(buf, out NinaOperatorType op2,
                                 out int op2_lv)) {
-                            ret.Add(new NinaCodeBlock(_file, bufLine!.Value,
-                                bufCol!.Value, buf, NinaCodeBlockType.Operator,
-                                _assert_op: op2, _assert_op_lv: op2_lv));
+                            ret.Add(
+                                new NinaCodeBlock(
+                                    _file, bufLine!.Value,
+                                    bufCol!.Value, buf, NinaCodeBlockType.Operator,
+                                    _assert_op: op2, _assert_op_lv: op2_lv
+                                )
+                            );
                         }
                         else if (isIdentifier) {
-                            ret.Add(new NinaCodeBlock(_file, bufLine!.Value,
-                                bufCol!.Value, buf, NinaCodeBlockType.Identifier));
+                            ret.Add(
+                                new NinaCodeBlock(
+                                    _file, bufLine!.Value,
+                                    bufCol!.Value, buf, NinaCodeBlockType.Identifier,
+                                    _assert_id_chinese: isChineseIdentifier
+                                )
+                            );
                         }
                         else {
                             NinaError.error(
@@ -183,6 +206,7 @@ static class NinaCodeResolver {
 
                     buf = buf_str = "";
                     isNumber = isIdentifier = true;
+                    isChineseIdentifier = false;
                     bufLine = bufCol = null;
                 }
                 else {
@@ -192,9 +216,12 @@ static class NinaCodeResolver {
                     }
                     if (! char.IsNumber(v))
                         isNumber = false;
+                    bool isChinese = v >= 0x4e00 && v <= 0x9fbb;
                     if (! (char.IsLetter(v) || (char.IsNumber(v) && buf.Length > 0)
-                            || v == '$' || v == '_'))
+                            || v == '$' || v == '_' || isChinese))
                         isIdentifier = false;
+                    if (isChinese)
+                        isChineseIdentifier = true;
                     buf += v;
                 }
             }
