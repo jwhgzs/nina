@@ -66,7 +66,6 @@ public static class NinaError {
         #if ! MODE_DEBUG
         catch (TargetInvocationException tex) {
             Console.WriteLine(tex.InnerException!.Message);
-            Environment.Exit(- 1);
         }
         #endif
         catch (Exception ex) {
@@ -75,6 +74,9 @@ public static class NinaError {
             #else
             Console.WriteLine(ex.ToString());
             #endif
+        }
+        finally {
+            Console.ReadLine();
             Environment.Exit(- 1);
         }
     }

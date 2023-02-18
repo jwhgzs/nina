@@ -23,7 +23,7 @@ static class NinaCLI {
                     NinaCore.execute(path);
                 }
                 else if (code == "E") {
-                    Console.WriteLine("* 请在下面输入源代码，输入结束请连续回车两次：");
+                    Console.WriteLine("* 请在下面输入源代码，要结束输入请连续回车两次：");
                     string src = "";
                     string? buf = "";
                     while ((buf = Console.ReadLine()) != null && buf != "")
@@ -37,7 +37,6 @@ static class NinaCLI {
                     NinaError.error("Nina 无法识别你的命令.", 679012);
                 }
             }
-            Console.ReadLine();
         });
     }
 }
