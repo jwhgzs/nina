@@ -1,7 +1,3 @@
-// #define MODE_DEBUG
-
-using System.Reflection;
-
 namespace Nina;
 
 static class NinaCore {
@@ -11,34 +7,14 @@ static class NinaCore {
         NinaASTBlockExpression ast = NinaCompiler.compile(_src, blocks);
         return NinaILCompiler.execute(ast, _arg);
     }
-    public static void Main(string[] _args) {
+    public static void execute(string _src) {
+        string code = "";
         try {
-            if (_args.Length < 1) {
-                NinaError.error("Nina 需要源文件路径哦!", 125433);
-            }
-            string src = _args[0];
-            string code = "";
-            try {
-                code = File.ReadAllText(src);
-            }
-            catch {
-                NinaError.error("Nina 读取源文件失败.", 144178);
-            }
-            execute(src, code);
+            code = File.ReadAllText(_src);
         }
-        #if ! MODE_DEBUG
-        catch (TargetInvocationException tex) {
-            Console.WriteLine(tex.InnerException!.Message);
-            Environment.Exit(- 1);
+        catch {
+            NinaError.error("Nina 读取源文件失败.", 144178);
         }
-        #endif
-        catch (Exception ex) {
-            #if ! MODE_DEBUG
-            Console.WriteLine(ex.Message);
-            #else
-            Console.WriteLine(ex.ToString());
-            #endif
-            Environment.Exit(- 1);
-        }
+        execute(_src, code);
     }
 }

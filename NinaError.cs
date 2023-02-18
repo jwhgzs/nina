@@ -1,3 +1,7 @@
+// #define MODE_DEBUG
+
+using System.Reflection;
+
 namespace Nina;
 
 public struct NinaErrorPosition {
@@ -54,5 +58,24 @@ public static class NinaError {
                     (NinaErrorPosition) _pos !
                 }
         );
+    }
+    public static void env(Action _act) {
+        try {
+            _act();
+        }
+        #if ! MODE_DEBUG
+        catch (TargetInvocationException tex) {
+            Console.WriteLine(tex.InnerException!.Message);
+            Environment.Exit(- 1);
+        }
+        #endif
+        catch (Exception ex) {
+            #if ! MODE_DEBUG
+            Console.WriteLine(ex.Message);
+            #else
+            Console.WriteLine(ex.ToString());
+            #endif
+            Environment.Exit(- 1);
+        }
     }
 }

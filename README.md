@@ -10,18 +10,12 @@
 # 环境要求
 
 - Windows 10 及以上
-- 安装 [.NET 6.0 Framework](https://dotnet.microsoft.com/zh-cn/download/dotnet/6.0)
 
 # 使用方法
 
-Nina 目前只提供了命令行用法，普通用法大致如下：
+Nina 内置了简单易用的 CLI （命令行工具）。安装 Nina 后，运行 Nina 主程序（例如通过快捷方式），即可使用 Nina 内置的 CLI。
 
-- 1. 打开 Nina 项目目录
-- 2. 右键，点击“在终端中打开”
-- 3. 输入命令 `cmd` 并回车，进入 CMD
-- 4. 输入命令 `nina ./test.nina` 并回车，即可运行当前目录下的 Nina 源文件 `test.nina`。当然，可自己更改源文件路径。
-
-当然，为了方便使用，还可以直接双击运行 Nina 项目目录下的快捷方式 `run.bat` ，也是一样的效果。
+自己试试就知道 Nina 的 CLI 有多爽啦！
 
 # 初识 Nina
 
