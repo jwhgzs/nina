@@ -1,6 +1,5 @@
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Diagnostics;
 
 namespace Nina;
 
@@ -13,16 +12,6 @@ static class NinaILCompiler {
         _pos_table[_ss].Add(
             (_g.ILOffset, _node.pos)
         );
-    }
-    public static ConstructorInfo compile_innerCtor(string _type) {
-        switch (_type) {
-            case "array":
-                return typeof(NinaDataArray).GetConstructors()[0];
-            case "object":
-                return typeof(NinaDataObject).GetConstructors()[0];
-        }
-        NinaError.error("莫名其妙的错误.", 256651);
-        return null !;
     }
     public static MethodInfo? compile_innerFunc(string _func) {
         if (_func.StartsWith(NinaConstsProviderUtil.NINA_ID_PREFIX)) {
