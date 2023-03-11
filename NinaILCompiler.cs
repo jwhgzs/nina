@@ -15,10 +15,12 @@ static class NinaILCompiler {
     }
     public static MethodInfo? compile_innerFunc(string _func) {
         if (_func.StartsWith(NinaConstsProviderUtil.NINA_ID_PREFIX)) {
-            string rname = _func.Remove(0,
-                NinaConstsProviderUtil.NINA_ID_PREFIX.Length);
-            return typeof(NinaAPI).GetMethod(rname,
-                BindingFlags.Public | BindingFlags.Static);
+            string rname = NinaCompilerUtil.unformat_identifier(_func);
+            if (NinaAPI.chinese_table.ContainsKey(rname))
+                rname = NinaAPI.chinese_table[rname];
+            return typeof(NinaAPI).GetMethod(
+                rname, BindingFlags.Public | BindingFlags.Static
+            );
         }
         return null;
     }
@@ -34,8 +36,7 @@ static class NinaILCompiler {
         string idname = _id.name;
         if (NinaCodeBlockUtil.specialIdentifiers_chineseTable
                 .ContainsKey(idname)) {
-            idname
-                = NinaCodeBlockUtil.specialIdentifiers_chineseTable[idname];
+            idname = NinaCodeBlockUtil.specialIdentifiers_chineseTable[idname];
         }
         if (! _isSetting) {
             if (_ins.Contains(idname)) {
@@ -1253,8 +1254,7 @@ static class NinaILCompiler {
         postable(_pos_table, _ss, _g, _stm);
     }
     public static void init_apis(
-            string _file,
-            TypeBuilder _tb, MethodBuilder _mb, ILGenerator _g,
+            string _file, TypeBuilder _tb, MethodBuilder _mb, ILGenerator _g,
             Dictionary<string, FieldInfo> _globs,
             Dictionary<string, FieldInfo> _glob_consts,
             Dictionary<string, List<(int, NinaErrorPosition)>> _pos_table) {
@@ -1310,8 +1310,11 @@ static class NinaILCompiler {
                 typeof(Func<List<object>, object>).GetConstructors()[0]);
             _g.Emit(OpCodes.Stsfld, fb);
             _glob_consts[NinaConstsProviderUtil.NINA_ID_PREFIX + v.Name]
+                = _glob_consts[
+                    NinaConstsProviderUtil.NINA_ID_PREFIX
+                        + NinaAPI.chinese_table.First(a => a.Value == v.Name).Key]
                 = fb;
-            NinaASTPlaceholder ph 
+            NinaASTPlaceholder ph
                 = new NinaASTPlaceholder(
                     new NinaErrorPosition(
                         "[内置函数: " + v.Name + "]",
@@ -1336,6 +1339,9 @@ static class NinaILCompiler {
         for (int i = 0; i < flds.Length; ++ i) {
             FieldInfo v = flds[i];
             _glob_consts[NinaConstsProviderUtil.NINA_ID_PREFIX + v.Name]
+                = _glob_consts[
+                    NinaConstsProviderUtil.NINA_ID_PREFIX
+                        + NinaAPI.chinese_table.First(a => a.Value == v.Name).Key]
                 = v;
         }
     }

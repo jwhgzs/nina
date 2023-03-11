@@ -9,13 +9,22 @@ static class NinaCLI {
             else {
                 Console.WriteLine("[Nina CLI - Nina 命令行工具]");
                 Console.WriteLine("* 命令列表：");
-                Console.WriteLine("- R. 运行安装目录下 test.nina 源文件");
+                Console.WriteLine("- R. 运行 Demo 源文件");
                 Console.WriteLine("- C. 运行自定义源文件");
                 Console.WriteLine("- E. 在这里编辑代码并运行");
                 Console.Write("* 请输入命令字母代号：");
                 string code = (Console.ReadLine() ?? "").ToUpper();
                 if (code == "R") {
-                    NinaCore.execute("./test.nina");
+                    DirectoryInfo dir = new DirectoryInfo(NinaConstsProviderUtil.NINA_PATH_DEMOS);
+                    FileInfo[] finfo = dir.GetFiles();
+                    int i = 0;
+                    foreach (FileInfo v in finfo) {
+                        Console.WriteLine("- " + v.Name.Replace(".nina", "", true, null));
+                        ++ i;
+                    }
+                    Console.Write("* 请输入 Demo 名称：");
+                    string demo = (Console.ReadLine() ?? "").ToLower();
+                    NinaCore.execute(NinaConstsProviderUtil.NINA_PATH_DEMOS + demo + ".nina");
                 }
                 else if (code == "C") {
                     Console.Write("* 请输入自定义源文件路径：");

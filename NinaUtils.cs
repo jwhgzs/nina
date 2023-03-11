@@ -3,6 +3,7 @@ using System.Reflection;
 namespace Nina;
 
 static class NinaConstsProviderUtil {
+    public const string NINA_PATH_DEMOS = "./demos/";
     public const string NINA_ID_PREFIX = "NinaGlobal__";
     public const string NINA_APIUTIL_OPERATOR_PREFIX = "op";
     public const string NINA_APIUTIL_CONVERTION_PREFIX = "to";

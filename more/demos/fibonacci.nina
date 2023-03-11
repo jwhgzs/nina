@@ -1,0 +1,10 @@
+func fibonacci(n = 1) {
+    if (n == 1 || n == 2) {
+        return 1;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+const n = 33, beginTime = time_now();
+console_printf('fibonacci(' + n + ') = ' + fibonacci(n));
+console_printf('time = ' + (time_now() - beginTime) + ' ms');
