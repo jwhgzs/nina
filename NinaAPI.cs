@@ -551,6 +551,7 @@ public static class NinaAPI {
         return Console.ReadLine() !;
     }
     public static object console_exit() {
+        Console.ReadLine();
         Environment.Exit(- 2);
         return null !;
     }
