@@ -7,4 +7,4 @@ func fibonacci(n = 1) {
 
 const n = 33, beginTime = time_now();
 console_printf('fibonacci(' + n + ') = ' + fibonacci(n));
-console_printf('time = ' + (time_now() - beginTime) + ' ms');
+console_printf('time = ' + (time_now() - beginTime) + ' s');
