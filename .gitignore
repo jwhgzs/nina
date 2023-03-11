@@ -1,0 +1,6 @@
+/bin
+/obj
+/.vscode
+/.VSCodeCounter
+/dist
+*.bat
